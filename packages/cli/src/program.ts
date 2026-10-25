@@ -1,6 +1,6 @@
 import type { AdapterRegistry, Clock, FileSystem, Git } from "@specflow/core";
 import { Command, CommanderError, Option } from "commander";
-import { driftCommand } from "./commands/drift.js";
+import { driftAckCommand, driftCommand } from "./commands/drift.js";
 import { harnessCheckCommand } from "./commands/harness.js";
 import { initCommand } from "./commands/init.js";
 import { lintCommand } from "./commands/lint.js";
@@ -30,7 +30,9 @@ export async function run(argv: string[], io: Io): Promise<number> {
   const program = new Command("specflow")
     .description("Spec-driven development: specs, tasks and traceability in git")
     .exitOverride()
-    .configureOutput({ writeOut: io.stdout, writeErr: io.stderr });
+    .configureOutput({ writeOut: io.stdout, writeErr: io.stderr })
+    // Options belong to the command they follow, so `drift --json` and `drift ack --json` stay apart.
+    .enablePositionalOptions();
 
   program
     .command("init")
@@ -82,7 +84,7 @@ export async function run(argv: string[], io: Io): Promise<number> {
       code = await traceCommand(io, target, { json: options.json ?? false });
     });
 
-  program
+  const drift = program
     .command("drift")
     .description("Find requirements whose code and spec no longer agree")
     .argument("[target]", "feature, or feature/ID such as auth/R3")
@@ -97,9 +99,19 @@ export async function run(argv: string[], io: Io): Promise<number> {
       });
     });
 
-  program
-    .command("harness")
-    .description("Inspect the agent harness")
+  drift.enablePositionalOptions();
+  drift
+    .command("ack")
+    .description("Acknowledge drift on a requirement up to a commit, writing its drift-ack: line")
+    .argument("<requirement>", "feature/R<n>, such as auth/R3")
+    .argument("<commit>", "the commit up to which the drift is acknowledged")
+    .option("--json", "print machine-readable output")
+    .action(async (ref: string, commit: string, options: { json?: boolean }) => {
+      code = await driftAckCommand(io, ref, commit, { json: options.json ?? false });
+    });
+
+  const harness = program.command("harness").description("Inspect the agent harness");
+  harness
     .command("check")
     .description("Check that the harness is installed and signed in")
     .option("--harness <name>", "adapter to check instead of harness.default")

@@ -59,6 +59,7 @@ Specflow never stores API keys; signing in is Claude Code's job.
 | Specflow: Accept and commit / Discard changes | Finishes a review |
 | Specflow: Trace | Lists the tasks and commits behind a requirement or task |
 | Specflow: Check drift | Finds code and spec that no longer agree |
+| Specflow: Acknowledge drift | Marks a requirement's drift as reviewed up to a commit (`drift-ack:`) |
 | Specflow: Check harness | Checks that Claude Code is installed and signed in |
 | Specflow: Refresh specs | Reloads the specs |
 

@@ -73,9 +73,10 @@ packages/vscode/webview/
 
 ## Drift ack
 
-- `setMetadataLine(text, location, key, value)` generalizes the status-line edit from `run/status.ts`: replace the value of `key:` in the item's metadata block, or insert the line after the heading, keeping line endings and every other line. `setTaskStatus` is rewritten on top of it, with its tests unchanged.
-- `ackDrift(fs, git, tree, ref, commit)` resolves the requirement, checks the commit with `git rev-parse --verify <commit>^{commit}`, and writes the full hash. It never commits; the human does.
-- CLI: `specflow drift ack <ref> <commit>` calls it, prints the requirement and hash, and supports `--json`.
+- `metadata.ts` generalizes the status-line edit from `run/status.ts`: `setMetadataLine(text, startLine, key, value)` replaces the value of `key:` in the item's metadata block, keeping its spacing and trailing whitespace, or inserts `key: value` right after the heading (after a setext underline), and returns the old line; `restoreMetadataLine` puts it back or removes it. Line endings and every other line are kept. `setTaskStatus` and `restoreTaskStatus` run on them, with their tests unchanged.
+- `ackDrift(fs, git, tree, ref, commit)` reads `requirements.md` again, finds the requirement, resolves the commit with `git rev-parse --verify --quiet --end-of-options <commit>^{commit}` (so `--output=x` is never an option and a tree is not a commit), and writes the full hash, returning the previous one if any. Unknown requirements (`feature/R<n>` only) and commits write nothing. It never commits; the human does.
+- CLI: `specflow drift ack <ref> <commit>` prints the requirement and hash, or with `--json` `{ schema: "specflow.drift-ack/v1", root, requirement, file, commit, previous? }`; errors exit 2 with `{ error: { kind, message } }`. The program and `drift` use positional options, so `drift --json` and `drift ack --json` belong to the command they follow; `specflow drift <target>` is unchanged.
+- Palette parity (vscode-extension/R9): `Specflow: Acknowledge drift` (`specflow.ackDrift(ref?, commit?, { confirm? })`) asks for the requirement and the commit (offering the requirement's latest drift commit), confirms with a modal, calls `ackDrift`, and recomputes drift if it was checked. The Drift tab reuses it. The parity test now reads `x.command("y")` as `x y`.
 
 ## Testing
 

@@ -4,7 +4,7 @@ import { NodeGit, NodeSpawner, SystemClock } from "@specflow/core/node";
 import * as vscode from "vscode";
 import { basename } from "node:path";
 import { CommitDocuments, commitScheme, SpecCodeLens } from "./codelens.js";
-import { lintCommand, showCommand } from "./commands.js";
+import { ackDriftCommand, lintCommand, showCommand } from "./commands.js";
 import { Diagnostics } from "./diagnostics.js";
 import { SpecExplorer } from "./explorer.js";
 import type { ExplorerNode } from "./explorer-nodes.js";
@@ -189,6 +189,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<Specfl
     insights.onDidChange((root) => {
       lenses.refresh();
       showDrift(root);
+    }),
+    vscode.commands.registerCommand("specflow.ackDrift", async (ref?: string, commit?: string, options?: { confirm?: boolean }) => {
+      const result = await ackDriftCommand([...services.values()], { fs, git, drift: (root) => insights.get(root)?.drift }, ref, commit, options);
+      // The spec reload updates lint and the tree; drift findings are recomputed if they were checked.
+      if (result?.ok) {
+        const checked = [...services.values()].some((s) => insights.get(s.root)?.drift !== undefined);
+        await refreshInsights({ drift: checked || driftOnSave() });
+      }
+      return result;
     }),
     vscode.commands.registerCommand("specflow.checkDrift", async () => {
       await refreshInsights({ drift: true });

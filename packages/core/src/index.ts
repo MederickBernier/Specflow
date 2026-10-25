@@ -86,3 +86,7 @@ export type { DiffHunk, DiffLine, FileDiff } from "./diff/unified.js";
 export { parseUnifiedDiff, unquotePath } from "./diff/unified.js";
 export type { DiffResult } from "./diff/read.js";
 export { diffLimits, emptyTree, readCommitDiff, readWorkingDiff } from "./diff/read.js";
+export type { MetadataPosition } from "./metadata.js";
+export { findMetadataLine, restoreMetadataLine, setMetadataLine } from "./metadata.js";
+export type { AckError, DriftAck } from "./drift/ack.js";
+export { ackDrift } from "./drift/ack.js";

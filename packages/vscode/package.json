@@ -95,6 +95,11 @@
         "category": "Specflow"
       },
       {
+        "command": "specflow.ackDrift",
+        "title": "Acknowledge drift",
+        "category": "Specflow"
+      },
+      {
         "command": "specflow.lint",
         "title": "Lint",
         "category": "Specflow"
@@ -153,6 +158,10 @@
         },
         {
           "command": "specflow.checkDrift",
+          "when": "specflow.hasSpecs"
+        },
+        {
+          "command": "specflow.ackDrift",
           "when": "specflow.hasSpecs"
         },
         {

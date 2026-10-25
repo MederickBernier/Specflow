@@ -514,6 +514,20 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
     assert.deepEqual(api.workbench.state!.roots[0]!.drift.findings!.map((f) => f.feature), ["auth"]);
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
   });
+
+  // workbench-ui/R7: Acknowledge drift writes drift-ack on the requirement and the finding goes away. Runs last: it clears the fixture's finding.
+  test("acknowledges drift from the palette", async () => {
+    const findings = (await vscode.commands.executeCommand("specflow.checkDrift")) as { evidence?: { commit?: string } }[];
+    const commit = findings[0]!.evidence!.commit!;
+    const result = (await vscode.commands.executeCommand("specflow.ackDrift", "auth/R1", commit, { confirm: false })) as { ok: boolean; value: { commit: string } };
+    assert.equal(result.ok, true);
+    assert.match(result.value.commit, /^[0-9a-f]{40}$/);
+    const text = new TextDecoder().decode(await vscode.workspace.fs.readFile(requirements()));
+    assert.match(text, new RegExp(`^## R1: .*\\ndrift-ack: ${result.value.commit}$`, "m"));
+    await eventually(() => drift().length === 0, "the drift diagnostic to go away");
+    const unknown = (await vscode.commands.executeCommand("specflow.ackDrift", "auth/R9", "HEAD", { confirm: false })) as { ok: boolean };
+    assert.equal(unknown.ok, false);
+  });
 } else {
   // vscode-extension/R1: without specs nothing activates until Initialize specs runs.
   test("does not activate on a workspace without specs", async () => {

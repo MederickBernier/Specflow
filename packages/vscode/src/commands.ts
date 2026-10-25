@@ -1,4 +1,4 @@
-import { type Finding, lint, type SpecTree } from "@specflow/core";
+import { ackDrift, type AckError, type DriftAck, type FileSystem, type Finding, type Git, lint, type Result, type SpecTree } from "@specflow/core";
 import * as vscode from "vscode";
 import type { Diagnostics } from "./diagnostics.js";
 import type { SpecService } from "./spec-service.js";
@@ -14,6 +14,7 @@ export const cliParity = {
   run: "specflow.runTask",
   trace: "specflow.showTrace",
   drift: "specflow.checkDrift",
+  "drift ack": "specflow.ackDrift",
   "harness check": "specflow.checkHarness",
 } as const;
 
@@ -58,4 +59,51 @@ function showItems(tree: SpecTree): ShowItem[] {
       ...feature.tasks.map((t) => ({ label: `${feature.name}/${t.id}`, description: t.title, detail: t.status, file: t.location.file, line: t.location.startLine })),
     ];
   });
+}
+
+/**
+ * `specflow.ackDrift` (workbench-ui/R7): writes `drift-ack: <commit>` on a
+ * requirement, as `specflow drift ack` does. The requirement and commit are
+ * asked for when not given; the latest drift commit of that requirement is
+ * offered. Asks for confirmation unless `confirm` is false. Returns what was
+ * written, or undefined when cancelled or refused.
+ */
+export async function ackDriftCommand(
+  services: SpecService[],
+  deps: { fs: FileSystem; git: Git; drift: (root: string) => Finding[] | undefined },
+  ref?: string,
+  commit?: string,
+  options: { confirm?: boolean } = {},
+): Promise<Result<DriftAck, AckError> | undefined> {
+  if (!ref) {
+    const picks = services.flatMap((s) =>
+      (s.tree?.features ?? []).flatMap((f) => f.requirements.map((r) => ({ label: `${f.name}/${r.id}`, description: r.title }))),
+    );
+    ref = (await vscode.window.showQuickPick(picks, { placeHolder: "Requirement whose drift to acknowledge" }))?.label;
+    if (!ref) return undefined;
+  }
+  const feature = ref.slice(0, ref.lastIndexOf("/"));
+  const service = services.find((s) => s.tree?.features.some((f) => f.name === feature));
+  if (!service?.tree) {
+    void vscode.window.showErrorMessage(`Specflow: no requirement ${ref}`);
+    return undefined;
+  }
+  if (!commit) {
+    const id = ref.slice(ref.lastIndexOf("/") + 1);
+    const latest = deps.drift(service.root)?.find((f) => f.feature === feature && f.id === id && f.evidence?.commit)?.evidence?.commit;
+    commit = await vscode.window.showInputBox({ prompt: `Acknowledge drift on ${ref} up to this commit`, value: latest ?? "HEAD" });
+    if (!commit) return undefined;
+  }
+  if (options.confirm !== false) {
+    const choice = await vscode.window.showWarningMessage(
+      `Acknowledge drift on ${ref} up to ${commit}?`,
+      { modal: true, detail: "This writes a drift-ack: line on the requirement. Findings from that commit and earlier ones stop showing; commit the change to share it." },
+      "Acknowledge",
+    );
+    if (choice !== "Acknowledge") return undefined;
+  }
+  const result = await ackDrift(deps.fs, deps.git, service.tree, ref, commit);
+  if (result.ok) void vscode.window.showInformationMessage(`Specflow: acknowledged drift on ${ref} up to ${result.value.commit.slice(0, 7)}.`);
+  else void vscode.window.showErrorMessage(`Specflow: ${result.error.message}`);
+  return result;
 }

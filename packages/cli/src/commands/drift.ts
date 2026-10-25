@@ -1,9 +1,12 @@
-import { checkDrift, type HarnessAdapter } from "@specflow/core";
-import { formatLocation, loadOrReport, relative, writeJson } from "../output.js";
+import { ackDrift, checkDrift, type HarnessAdapter } from "@specflow/core";
+import { formatLocation, loadOrReport, relative, relativePath, writeJson } from "../output.js";
 import { exitCodes, type Io } from "../program.js";
 
 /** JSON schema ID of `specflow drift --json`. Bump the version on breaking changes. */
 export const driftSchema = "specflow.drift/v1";
+
+/** JSON schema ID of `specflow drift ack --json`. Bump the version on breaking changes. */
+export const driftAckSchema = "specflow.drift-ack/v1";
 
 const severityRank = { info: 0, warning: 1, error: 2 } as const;
 
@@ -55,4 +58,29 @@ export async function driftCommand(
 
   const threshold = options.failOn ? severityRank[options.failOn] : Number.POSITIVE_INFINITY;
   return findings.some((f) => severityRank[f.severity] >= threshold) ? exitCodes.failed : exitCodes.ok;
+}
+
+/**
+ * `specflow drift ack <feature>/<R id> <commit>` (workbench-ui/R7): sets the
+ * requirement's `drift-ack:` line to the commit's full hash. Exits 2 and
+ * writes nothing for an unknown requirement or commit.
+ */
+export async function driftAckCommand(io: Io, ref: string, commit: string, options: { json: boolean }): Promise<number> {
+  const tree = await loadOrReport(io, driftAckSchema, options.json);
+  if (typeof tree === "number") return tree;
+  const result = await ackDrift(io.fs, io.git, tree, ref, commit);
+  if (!result.ok) {
+    if (options.json) writeJson(io, { schema: driftAckSchema, error: result.error });
+    else io.stderr(`specflow: ${result.error.message}\n`);
+    return exitCodes.unusable;
+  }
+  const ack = result.value;
+  const file = relativePath(tree.root, ack.file);
+  if (options.json) {
+    writeJson(io, { schema: driftAckSchema, root: tree.root, requirement: `${ack.feature}/${ack.id}`, file, commit: ack.commit, ...(ack.previous && { previous: ack.previous }) });
+  } else {
+    io.stdout(`Acknowledged drift on ${ack.feature}/${ack.id} up to ${ack.commit.slice(0, 7)}${ack.previous ? ` (was ${ack.previous.slice(0, 7)})` : ""}.\n`);
+    io.stdout(`Wrote drift-ack: ${ack.commit} in ${file}. Commit it to share the acknowledgement.\n`);
+  }
+  return exitCodes.ok;
 }

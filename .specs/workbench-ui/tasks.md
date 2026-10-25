@@ -57,8 +57,8 @@ depends: T2, T6, vscode-extension/T8
 Picking a requirement or task shows its tasks and commits; a commit's diff renders inline; the requirement lens opens the workbench on it.
 
 ## T9: Drift ack in core and CLI [R7]
-status: todo
-files: packages/core/src/metadata.ts, packages/core/src/run/status.ts, packages/core/src/drift/ack.ts, packages/core/src/index.ts, packages/cli/src/commands/drift.ts
+status: done
+files: packages/core/src/metadata.ts, packages/core/src/run/status.ts, packages/core/src/drift/ack.ts, packages/core/src/index.ts, packages/cli/src/commands/drift.ts, packages/cli/src/program.ts, packages/vscode/src/commands.ts, packages/vscode/src/extension.ts, packages/vscode/package.json, README.md, packages/vscode/README.md
 depends: drift-check/T6
 
 `setTaskStatus` runs on `setMetadataLine` with its tests unchanged; `specflow drift ack` writes the full hash, changes no other line, and refuses unknown refs and commits.
