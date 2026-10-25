@@ -14,9 +14,16 @@ extension.ts
   RunView            webview panel rendering the RunEvent stream
 ```
 
+## Activation
+
+- `activationEvents`: `workspaceContains:.specs/config.yml` and `workspaceContains:.specs/**/*.md`. Without specs the extension stays inactive until `Specflow: Initialize specs` runs.
+- The context key `specflow.hasSpecs` is true when a `file:` workspace folder has a spec root; every command except `specflow.init` is shown in the palette only then, and init only when it is false.
+- `specflow.init` runs `initSpecs` in the workspace folder (a picker when there are several), opens `product.md`, and returns the result so smoke tests can assert on it.
+- Smoke tests run in a real VS Code through `@vscode/test-electron` (`pnpm --filter specflow-vscode test:smoke`), once on a workspace with specs and once without; CI runs them under `xvfb-run` on Linux. The runner clears `ELECTRON_RUN_AS_NODE`, which a VS Code terminal sets and which would make the test VS Code start as plain Node.
+
 ## Spec loading
 
-- `SpecService` wraps `loadSpecTree` with a VS Code `FileSystem` implementation over `workspace.fs`.
+- `SpecService` wraps `loadSpecTree` with `VsCodeFileSystem`, a `FileSystem` implementation over `workspace.fs` (`file:` URIs; core paths are `uri.fsPath` with forward slashes).
 - A `FileSystemWatcher` on `.specs/**` triggers a debounced reload (300 ms).
 - One `SpecService` per workspace folder that has specs; multi-root workspaces are supported but not optimized.
 

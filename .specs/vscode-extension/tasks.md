@@ -1,8 +1,8 @@
 # vscode-extension: tasks
 
 ## T1: Extension skeleton and activation [R1]
-status: todo
-files: packages/vscode/package.json, packages/vscode/src/extension.ts
+status: done
+files: packages/vscode/package.json, packages/vscode/src/extension.ts, packages/vscode/src/vscode-fs.ts, packages/vscode/test/**, .github/workflows/ci.yml
 depends: core-spec-model/T7, core-spec-model/T10
 
 Activates only on workspaces with specs; smoke test covers both cases.

@@ -1,14 +1,41 @@
 {
   "name": "specflow-vscode",
   "displayName": "Specflow",
+  "description": "Spec-driven development: run tasks through your agent harness, trace them in git, and catch drift.",
   "version": "0.0.0",
   "private": true,
+  "publisher": "specflow",
   "engines": {
     "vscode": "^1.90.0"
   },
+  "categories": [
+    "Other"
+  ],
   "main": "./dist/extension.js",
+  "activationEvents": [
+    "workspaceContains:.specs/config.yml",
+    "workspaceContains:.specs/**/*.md"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "specflow.init",
+        "title": "Initialize specs",
+        "category": "Specflow"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "specflow.init",
+          "when": "!specflow.hasSpecs"
+        }
+      ]
+    }
+  },
   "scripts": {
-    "build": "tsc --noEmit -p tsconfig.json && esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --sourcemap --outfile=dist/extension.js"
+    "build": "tsc --noEmit -p tsconfig.json && esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --sourcemap --outfile=dist/extension.js",
+    "test:smoke": "pnpm build && esbuild test/smoke/index.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --outfile=dist-test/smoke.js && node test/run.ts"
   },
   "dependencies": {
     "@specflow/adapter-claude-code": "workspace:*",
@@ -16,6 +43,7 @@
   },
   "devDependencies": {
     "@types/vscode": "~1.90.0",
+    "@vscode/test-electron": "^3.1.0",
     "esbuild": "^0.28.2"
   }
 }

@@ -1,0 +1,43 @@
+// Launches VS Code with the extension and runs the smoke tests in it, once per
+// workspace: one with specs, one without (vscode-extension/R1).
+//
+//   pnpm --filter specflow-vscode test:smoke
+//
+// Needs a display; on Linux CI wrap it in xvfb-run.
+
+import { cpSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { runTests } from "@vscode/test-electron";
+
+// Started from a VS Code terminal, these would make the test VS Code run as plain Node or talk to the outer window.
+for (const name of Object.keys(process.env)) {
+  if (name === "ELECTRON_RUN_AS_NODE") delete process.env[name];
+}
+
+const here = fileURLToPath(new URL(".", import.meta.url));
+const extensionDevelopmentPath = resolve(here, "..");
+const extensionTestsPath = resolve(here, "../dist-test/smoke.js");
+const withSpecs = resolve(here, "../../../fixtures/repos/clean");
+
+const scratch = mkdtempSync(join(tmpdir(), "specflow-smoke-"));
+const withoutSpecs = join(scratch, "empty");
+cpSync(join(withSpecs, "src"), join(withoutSpecs, "src"), { recursive: true });
+
+try {
+  for (const [label, workspace] of [
+    ["with-specs", withSpecs],
+    ["without-specs", withoutSpecs],
+  ] as const) {
+    console.log(`smoke: ${label}`);
+    await runTests({
+      extensionDevelopmentPath,
+      extensionTestsPath,
+      launchArgs: [workspace, "--disable-extensions", "--disable-workspace-trust", "--skip-welcome", "--skip-release-notes"],
+      extensionTestsEnv: { SPECFLOW_SMOKE: label },
+    });
+  }
+} finally {
+  rmSync(scratch, { recursive: true, force: true });
+}

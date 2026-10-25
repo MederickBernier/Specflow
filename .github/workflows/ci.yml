@@ -23,3 +23,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm test
+      - name: Extension smoke tests (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a pnpm --filter specflow-vscode test:smoke
+      - name: Extension smoke tests (Windows)
+        if: runner.os == 'Windows'
+        run: pnpm --filter specflow-vscode test:smoke
