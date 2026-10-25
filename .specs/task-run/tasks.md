@@ -71,7 +71,8 @@ depends: T6, T7, T8, T9
 Commands work end to end against the replay adapter in tests, and against real Claude Code manually.
 
 ## T11: Dogfood on a real feature []
-status: todo
+status: done
+files: docs/dogfood/2026-10-25-tally.md
 depends: T10
 
 Build one real feature in another repo using only `specflow run`. Write down what hurt before starting the drift-check feature.
