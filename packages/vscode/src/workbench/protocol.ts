@@ -96,11 +96,6 @@ export type DiffRequest = { source: "review" | "working" | "commit"; root: strin
 /** The extension's answer to a diff request, for the state revision the page had when it asked. */
 export type DiffAnswer = DiffRequest & { revision: number } & ({ files: FileDiff[]; truncated: boolean } | { error: string });
 
-/** The cache key of a diff request. */
-export function diffKey(request: DiffRequest): string {
-  return JSON.stringify([request.source, request.root, request.path ?? null, request.commit ?? null]);
-}
-
 /** Messages the extension posts to the workbench page. */
 export type HostMessage = { type: "state"; state: WorkbenchState } | { type: "show"; tab: WorkbenchTab } | ({ type: "diff" } & DiffAnswer);
 

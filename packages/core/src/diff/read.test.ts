@@ -162,10 +162,10 @@ describe("readWorkingDiff (workbench-ui/R4)", () => {
     expect(result.ok && result.value.files.map((f) => [f.path, f.additions])).toEqual([["a.txt", 1]]);
   });
 
-  it("returns git's error outside a repository", async () => {
+  it("says plainly when the root is not in a git working tree", async () => {
     dir = toPosixPath(mkdtempSync(join(tmpdir(), "specflow-diff-")));
     const result = await readWorkingDiff(git, fs, dir);
-    expect(result.ok).toBe(false);
+    expect(!result.ok && result.error.message).toBe(`${dir} is not in a git working tree`);
   });
 });
 

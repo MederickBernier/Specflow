@@ -71,8 +71,8 @@ depends: T2, T6, T9
 Findings grouped by requirement, Check drift with progress, commit diffs inline, acknowledge after confirmation; "not checked" when there are no results.
 
 ## T11: Workbench smoke tests and docs []
-status: todo
-files: packages/vscode/test/**, packages/vscode/README.md, packages/vscode/CHANGELOG.md
+status: done
+files: packages/vscode/test/**, packages/vscode/README.md, packages/vscode/CHANGELOG.md, packages/vscode/webview/diffs.ts, packages/vscode/src/workbench/protocol.ts, packages/core/src/diff/read.ts
 depends: T3, T4, T7, T8, T10
 
 Smoke tests drive the workbench through `workbench.receive` on the fixture workspaces; the README documents the workbench.

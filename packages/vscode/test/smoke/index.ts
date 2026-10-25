@@ -598,6 +598,38 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
     const api = extension().exports as { services: () => { tree?: { features: { name: string }[] } }[] };
     assert.deepEqual(api.services()[0]?.tree?.features.map((f) => f.name), ["example"]);
   });
+
+  // workbench-ui/R1, R2, R4: a workspace that was just initialized opens the workbench on its example feature.
+  test("opens the workbench on a freshly initialized workspace", async () => {
+    type Workbench = {
+      state?: { revision: number; roots: { features: { name: string; tasks: { id: string }[] }[] }[]; review?: unknown };
+      rendered?: number;
+      receive: (m: unknown) => unknown;
+      send: (m: unknown) => void;
+    };
+    const api = (extension().exports as { workbench: Workbench }).workbench;
+    await vscode.commands.executeCommand("specflow.openWorkbench", { tab: "review" });
+    await eventually(() => api.state?.roots[0]?.features.some((f) => f.name === "example") === true && api.rendered === api.state.revision, "the example feature on the page");
+    assert.equal(api.state!.review, undefined);
+    // This workspace is not a git repository: the Review tab's working tree diff says so plainly.
+    const sent: { type: string; source?: string; files?: unknown[]; error?: string }[] = [];
+    const send = api.send.bind(api);
+    api.send = (message) => {
+      sent.push(message as (typeof sent)[number]);
+      send(message);
+    };
+    try {
+      await eventually(() => sent.some((m) => m.type === "diff" && m.source === "working"), "the page to ask for the working tree", 3000).catch(async () => {
+        // The page may have asked before the spy was installed; ask again for this revision.
+        api.receive({ type: "diff", source: "working", root: vscode.workspace.workspaceFolders![0]!.uri.fsPath.replaceAll("\\", "/"), revision: api.state!.revision });
+        await eventually(() => sent.some((m) => m.type === "diff" && m.source === "working"), "the working tree diff");
+      });
+      const answer = sent.find((m) => m.type === "diff" && m.source === "working")!;
+      assert.match(answer.error ?? "", /is not in a git working tree$/);
+    } finally {
+      api.send = send;
+    }
+  });
 }
 
 /** Entry point called by VS Code's test runner. */

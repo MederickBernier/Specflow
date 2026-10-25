@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "preact/hooks";
-import { type DiffAnswer, type DiffRequest, diffKey, type HostMessage } from "../src/workbench/protocol.ts";
+import type { DiffAnswer, DiffRequest, HostMessage } from "../src/workbench/protocol.ts";
 import type { WebviewApi } from "./vscode-api.ts";
+
+/** The cache key of a diff request. */
+export function diffKey(request: DiffRequest): string {
+  return JSON.stringify([request.source, request.root, request.path ?? null, request.commit ?? null]);
+}
 
 /** Looks up a diff, asking the extension for it the first time; undefined while it loads. */
 export type DiffSource = (request: DiffRequest) => DiffAnswer | undefined;

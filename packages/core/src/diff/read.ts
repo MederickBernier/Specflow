@@ -35,6 +35,11 @@ export async function readWorkingDiff(
   const limits = options.limits ?? diffLimits;
   const run = (args: string[]) => git.run(args, { cwd: root });
   const pathspec = (options.paths ?? []).map((path) => `:(literal)${path}`);
+  const inside = await run(["rev-parse", "--is-inside-work-tree"]);
+  if (!inside.ok || inside.value.trim() !== "true") {
+    const failed = inside.ok ? { args: ["rev-parse", "--is-inside-work-tree"], exitCode: 0, stderr: "" } : inside.error;
+    return err({ ...failed, message: `${root} is not in a git working tree` });
+  }
   const head = await run(["rev-parse", "--verify", "--quiet", "HEAD^{commit}"]);
   const base = head.ok ? "HEAD" : emptyTree;
 

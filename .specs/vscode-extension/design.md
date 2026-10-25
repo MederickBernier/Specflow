@@ -86,7 +86,7 @@ The table lives in `commands.ts` (`cliParity`); a unit test reads the CLI's comm
 
 ## Packaging
 
-esbuild bundles to a single `dist/extension.js` (minified for packaging, about 720 KB). `pnpm --filter specflow-vscode package` builds `specflow-vscode.vsix` (about 270 KB) with only the bundles (extension, workbench webview, codicon font), `package.json`, README, changelog and license (`.vscodeignore`). The smoke tests can run against an unpacked `.vsix` with `SPECFLOW_EXTENSION_PATH`. `vsce` and `ovsx` publish from CI on a `v*` tag (`release.yml`) with the `VSCE_PAT` and `OVSX_PAT` secrets, after checking the tag matches the extension version. License: MIT.
+esbuild bundles to a single `dist/extension.js` (minified for packaging, about 720 KB). `pnpm --filter specflow-vscode package` builds `specflow-vscode.vsix` (about 290 KB) with only the bundles (extension, workbench webview, codicon font), `package.json`, README, changelog and license (`.vscodeignore`). The smoke tests can run against an unpacked `.vsix` with `SPECFLOW_EXTENSION_PATH`. `vsce` and `ovsx` publish from CI on a `v*` tag (`release.yml`) with the `VSCE_PAT` and `OVSX_PAT` secrets, after checking the tag matches the extension version. License: MIT.
 
 ## Alternatives considered
 
