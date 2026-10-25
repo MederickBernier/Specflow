@@ -116,6 +116,9 @@ Both streams are buffered without limit as soon as the process starts, so a call
 - `usage` comes from the final `result` line. Tool denials (`system/permission_denied`) become non-fatal `error` events: a run can end `success` with a denied tool.
 - Cancellation: on abort, send SIGTERM, then SIGKILL after 5 seconds. Claude Code prints no `result` when killed, so the adapter emits the cancelled `finished` itself.
 - Pin a tested version range of Claude Code (`>=2.1.0 <3`). `check()` warns, but does not fail, outside the range, and reads `loggedIn` from `claude auth status --json`.
+- `ClaudeCodeAdapter({ spawner, git, clock })` takes the core interfaces, so contract tests play the recorded streams through `FakeSpawner`. `StreamMapper` holds the line-to-event mapping.
+- The `git status` pass compares against a snapshot taken before the run, so files that were already dirty (with `--allow-dirty`) are not reported, and skips silently outside a git repository.
+- `check()` sends users to `https://code.claude.com/docs/en/setup`. On Windows, a missing `claude` explains that the npm-installed `claude.cmd` cannot be started without a shell and points to the native installer; no shell is ever used.
 - Flags and event fields were verified in the spike (task T1, `docs/spikes/claude-code-headless.md`) against 2.1.310 and recorded in `fixtures/streams/`.
 
 ## Prompt template

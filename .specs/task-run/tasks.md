@@ -36,7 +36,7 @@ depends: T3, T4, T12
 With the replay adapter: dirty tree refuses, `--allow-dirty` proceeds, abort yields a cancelled `finished` event.
 
 ## T6: Claude Code adapter [R4, R5]
-status: todo
+status: done
 files: packages/adapter-claude-code/src/**
 depends: T1, T2, T12
 
