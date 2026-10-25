@@ -16,11 +16,12 @@ packages/vscode/src/workbench/
   html.ts              tab list and the page's HTML and CSP (no vscode API)
   panel.ts             WorkbenchPanel: creates/reveals the panel, restores it, message routing
   state.ts             buildWorkbenchState(...) -> WorkbenchState (no vscode API)
-  protocol.ts          zod schemas for webview -> host messages; host -> webview types
+  protocol.ts          WorkbenchState and host -> page types; zod schemas for page -> host messages
   actions.ts           maps intents to existing commands and core calls
 
 packages/vscode/webview/
-  main.tsx             entry, receives state, posts intents
+  main.tsx             entry
+  connection.tsx       asks for and receives the state, reports what it rendered
   app.tsx              tab bar and routing
   overview.tsx, board.tsx, review.tsx, trace.tsx, drift.tsx
   diff-view.tsx        unified and split rendering of a FileDiff
@@ -45,7 +46,10 @@ packages/vscode/webview/
 ## State and updates
 
 - `buildWorkbenchState` takes the loaded roots (tree or load error, lint findings), `Insights` (trace commits, drift), the review state (pending recording, outcome with scope and spec notes), harness health, and the selections the host keeps (trace target, open commit). It returns plain JSON, unit tested without VS Code.
-- The panel subscribes to `SpecService.onDidChange`, `Insights.onDidChange`, the run controller and review changes, and posts a new state, debounced at 100 ms (inside R1's 1 second with the 300 ms spec reload).
+- `WorkbenchState` and the other types the page sees live in `protocol.ts`, which imports nothing from the host, so the page type-checks against them without pulling in `vscode` or core; the page bundle never contains zod.
+- The extension calls `workbench.changed()` on `SpecService.onDidChange`, workspace root changes, `Insights.onDidChange`, review changes, `RunController.onDidChange` and `onDidCheckHarness` (the last harness check is kept by `harness-health.ts`). While the panel is open this posts a new state, debounced at 100 ms (inside R1's 1 second with the 300 ms spec reload).
+- The page starts over each time it is shown, so it posts `ready` on load and gets the state at once; after rendering a state it posts `{ type: "rendered", revision }`. Until the first state the panel says it is loading.
+- Page messages other than `ready`, `tab` and `rendered` are intents (`run`, `open`, `openDiff`, `diff`); once validated they fire `onDidRequest`, where the tabs' actions handle them. Commits a page may ask for are those in the state: drift evidence now, trace commits once the Trace tab lists them.
 - Diffs are not part of the main state. The webview asks for one (`{ type: "diff", source: "review" | "working" | "commit", path?, commit? }`) and the host answers with `{ type: "diff", key, files }`; the webview caches by key and drops the cache on the next state whose `revision` changed.
 
 ## Diffs

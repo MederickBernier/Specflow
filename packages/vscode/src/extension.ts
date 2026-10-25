@@ -11,12 +11,13 @@ import type { ExplorerNode } from "./explorer-nodes.js";
 import { headScheme, ReviewController } from "./run/review.js";
 import { RunController } from "./run/run-controller.js";
 import { findingsByFile } from "./diagnostics-data.js";
-import { checkHarness } from "./harness-health.js";
+import { checkHarness, lastHarnessCheck, onDidCheckHarness } from "./harness-health.js";
 import { Insights } from "./insights.js";
 import type { ExplorerSource } from "./explorer-nodes.js";
 import { SpecService } from "./spec-service.js";
 import { corePath, VsCodeFileSystem } from "./vscode-fs.js";
 import { type OpenWorkbenchOptions, WorkbenchPanel, workbenchViewType } from "./workbench/panel.js";
+import type { WorkbenchInputs } from "./workbench/state.js";
 
 /** Context key: true when a workspace folder has specs. Commands other than init are only shown then. */
 export const hasSpecsKey = "specflow.hasSpecs";
@@ -53,6 +54,8 @@ function showDrift(root: string): void {
 /** The config of the first spec root, for harness selection. */
 const firstConfig = () => [...services.values()].find((s) => s.tree)?.tree?.config;
 
+let workbench: WorkbenchPanel | undefined;
+
 const explorer = new SpecExplorer(() =>
   [...services.values()].map((s): ExplorerSource => ({
     root: s.root,
@@ -61,6 +64,33 @@ const explorer = new SpecExplorer(() =>
     ...(s.error && !s.tree && { error: s.error.message }),
   })),
 );
+
+/** What the workbench shows, gathered from the services, insights, runs and review. */
+function workbenchInputs(): WorkbenchInputs {
+  const pending = review.pending;
+  const run = runs.current;
+  const harness = lastHarnessCheck();
+  return {
+    roots: [...services.values()].map((s) => ({
+      root: s.root,
+      name: basename(s.root),
+      ...(s.tree && { tree: s.tree }),
+      ...(s.error && { error: s.error.message }),
+      ...(insights.get(s.root) && { insights: insights.get(s.root)! }),
+    })),
+    ...(harness && { harness }),
+    ...(run && { run: { target: run.target, status: run.state.status } }),
+    ...(pending && {
+      review: {
+        root: pending.tree.root,
+        target: `${pending.result.snapshot.feature}/${pending.result.snapshot.task}`,
+        files: review.files(),
+        outOfScope: pending.result.scope.outOfScope,
+        specNotes: pending.result.specNotes,
+      },
+    }),
+  };
+}
 
 /** What `activate` returns; also used by the smoke tests. */
 export type SpecflowApi = {
@@ -76,12 +106,18 @@ export type SpecflowApi = {
 
 /** Runs when a workspace contains `.specs/`, or when `Initialize specs` is invoked. */
 export async function activate(context: vscode.ExtensionContext): Promise<SpecflowApi> {
-  const workbench = new WorkbenchPanel(context.extensionUri);
+  const panel = new WorkbenchPanel(context.extensionUri, workbenchInputs);
+  workbench = panel;
+  const changed = () => panel.changed();
   context.subscriptions.push(
-    workbench,
-    vscode.window.registerWebviewPanelSerializer(workbenchViewType, workbench),
+    panel,
+    insights.onDidChange(changed),
+    review.onDidChangeTreeData(changed),
+    runs.onDidChange(changed),
+    onDidCheckHarness(changed),
+    vscode.window.registerWebviewPanelSerializer(workbenchViewType, panel),
     vscode.commands.registerCommand("specflow.openWorkbench", (options?: OpenWorkbenchOptions) => {
-      workbench.open(options);
+      panel.open(options);
     }),
     vscode.commands.registerCommand("specflow.init", () => initialize()),
     vscode.commands.registerCommand("specflow.lint", () => lintCommand([...services.values()], diagnostics)),
@@ -137,7 +173,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Specfl
   await refreshContext();
   // vscode-extension/R8: tell the user early if runs cannot work. Not awaited, so activation stays fast.
   if (services.size > 0) void checkHarness(registry, firstConfig(), { quiet: true });
-  return { services: () => [...services.values()], explorer, registry, runs, review, insights, refreshInsights, workbench };
+  return { services: () => [...services.values()], explorer, registry, runs, review, insights, refreshInsights, workbench: panel };
 }
 
 export function deactivate(): void {}
@@ -169,6 +205,7 @@ async function refreshContext(): Promise<void> {
     const service = new SpecService(root, fs);
     services.set(root, service);
     service.onDidChange(() => {
+      workbench?.changed();
       explorer.refresh();
       lenses.refresh();
       diagnostics.updateLint(service);
@@ -179,6 +216,7 @@ async function refreshContext(): Promise<void> {
     void insights.refresh(service, { drift: driftOnSave() });
   }
   explorer.refresh();
+  workbench?.changed();
   await vscode.commands.executeCommand("setContext", hasSpecsKey, roots.length > 0);
 }
 

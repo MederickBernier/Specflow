@@ -8,8 +8,8 @@ depends: vscode-extension/T10
 `Specflow: Open workbench` opens one themed panel with five empty tabs under a strict CSP; a second call reveals it; tab and reload restore work; the `.vsix` contains the webview bundle.
 
 ## T2: Workbench state and message protocol [R1]
-status: todo
-files: packages/vscode/src/workbench/state.ts, packages/vscode/src/workbench/protocol.ts, packages/vscode/src/workbench/panel.ts, packages/vscode/webview/main.tsx
+status: done
+files: packages/vscode/src/workbench/state.ts, packages/vscode/src/workbench/protocol.ts, packages/vscode/src/workbench/panel.ts, packages/vscode/webview/**, packages/vscode/src/extension.ts, packages/vscode/src/run/run-controller.ts, packages/vscode/src/harness-health.ts, packages/vscode/package.json
 depends: T1
 
 State is built from roots, insights, review and harness health without the VS Code API; spec and run changes reach the open panel within 1 second; malformed messages and unknown paths are dropped.

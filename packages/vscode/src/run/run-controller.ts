@@ -18,6 +18,9 @@ export class RunController implements vscode.Disposable {
   readonly #deps: { fs: VsCodeFileSystem; git: Git; registry: AdapterRegistry; clock: Clock };
   #current: ActiveRun | undefined;
   readonly #views: RunView[] = [];
+  readonly #changed = new vscode.EventEmitter<void>();
+  /** Fires when the latest run starts or its state changes. */
+  readonly onDidChange = this.#changed.event;
 
   constructor(deps: { fs: VsCodeFileSystem; git: Git; registry: AdapterRegistry; clock: Clock }) {
     this.#deps = deps;
@@ -68,6 +71,7 @@ export class RunController implements vscode.Disposable {
   dispose(): void {
     this.cancel();
     for (const view of this.#views) view.dispose();
+    this.#changed.dispose();
   }
 
   async #start(
@@ -85,6 +89,7 @@ export class RunController implements vscode.Disposable {
       cancel: () => {
         run.state = cancelling(run.state);
         view?.update(run.state);
+        if (this.#current === run) this.#changed.fire();
         controller.abort();
       },
       done: Promise.resolve(undefined),
@@ -92,6 +97,7 @@ export class RunController implements vscode.Disposable {
     const update = (state: RunViewState) => {
       run.state = state;
       view?.update(state);
+      if (this.#current === run) this.#changed.fire();
     };
 
     const pending = runTask(

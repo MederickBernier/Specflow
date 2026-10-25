@@ -300,8 +300,41 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
     await eventually(() => api.workbench.tab === "drift", "the drift tab");
     assert.equal(workbenchTabs().length, 1);
     assert.equal(api.workbench.panel!.active, true);
-    api.workbench.panel!.dispose();
-    await eventually(() => workbenchTabs().length === 0 && api.workbench.panel === undefined, "the workbench to close");
+  });
+
+  type WorkbenchApi = {
+    panel?: vscode.WebviewPanel;
+    state?: { revision: number; roots: { features: { name: string; tasks: { id: string }[] }[] }[]; run?: { target: string } };
+    rendered?: number;
+    receive: (message: unknown) => unknown;
+  };
+
+  // workbench-ui/R1: a spec change reaches the open page within 1 second; the page renders what it was sent.
+  test("keeps the open workbench current and drops messages it cannot verify", async () => {
+    const api = (extension().exports as { workbench: WorkbenchApi }).workbench;
+    await eventually(() => api.state !== undefined && api.rendered === api.state.revision, "the page to render the state");
+    assert.match(api.state!.run?.target ?? "", /^accounts\/T\d+$/, "the latest run is in the state");
+
+    const root = vscode.workspace.workspaceFolders![0]!.uri;
+    const tasks = vscode.Uri.joinPath(root, ".specs/accounts/tasks.md");
+    const text = new TextDecoder().decode(await vscode.workspace.fs.readFile(tasks));
+    const hasTask = () => api.state?.roots[0]?.features.find((f) => f.name === "accounts")?.tasks.some((t) => t.id === "T5") === true;
+    assert.equal(hasTask(), false);
+    const started = Date.now();
+    await vscode.workspace.fs.writeFile(tasks, new TextEncoder().encode(`${text}\n## T5: Added for the workbench []\n`));
+    await eventually(() => hasTask() && api.rendered === api.state!.revision, "the page to render the new task", 2000);
+    const elapsed = Date.now() - started;
+    assert.ok(elapsed < 1000, `shown in ${elapsed} ms`);
+    await vscode.workspace.fs.writeFile(tasks, new TextEncoder().encode(text));
+
+    assert.equal(api.receive({ type: "eval", code: "1" }), undefined);
+    assert.equal(api.receive({ type: "run", root: "/elsewhere", feature: "accounts", task: "T1" }), undefined);
+    assert.equal(api.receive({ type: "openDiff", path: "../../etc/passwd" }), undefined);
+
+    const workbenchTabs = () =>
+      vscode.window.tabGroups.all.flatMap((g) => g.tabs).filter((t) => t.input instanceof vscode.TabInputWebview && t.input.viewType.endsWith("specflow.workbench"));
+    api.panel!.dispose();
+    await eventually(() => workbenchTabs().length === 0 && api.panel === undefined, "the workbench to close");
   });
 
   test("refuses to initialize over existing specs", async () => {

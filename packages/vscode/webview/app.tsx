@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { isWorkbenchTab, type WorkbenchTab, workbenchTabs } from "../src/workbench/html.ts";
+import type { WorkbenchState } from "../src/workbench/protocol.ts";
 import type { WebviewApi } from "./vscode-api.ts";
 
 const labels: Record<WorkbenchTab, { title: string; icon: string; empty: string }> = {
@@ -14,9 +15,10 @@ const labels: Record<WorkbenchTab, { title: string; icon: string; empty: string 
  * The workbench page (workbench-ui/R1): a tab bar following the ARIA tabs
  * pattern (arrow keys, Home and End move between tabs) and one panel per tab.
  * The current tab is saved with `setState`, which VS Code keeps while the
- * panel is hidden and across reloads.
+ * panel is hidden and across reloads. Until the extension sends its first
+ * state, the panel says it is loading.
  */
-export function App({ api, initialTab }: { api: WebviewApi; initialTab?: WorkbenchTab }) {
+export function App({ api, initialTab, state }: { api: WebviewApi; initialTab?: WorkbenchTab; state?: WorkbenchState }) {
   const saved = api.getState()?.tab;
   const [tab, setTab] = useState<WorkbenchTab>(isWorkbenchTab(saved) ? saved : (initialTab ?? "overview"));
   const tabRefs = useRef<Partial<Record<WorkbenchTab, HTMLButtonElement | null>>>({});
@@ -80,7 +82,7 @@ export function App({ api, initialTab }: { api: WebviewApi; initialTab?: Workben
       </nav>
       <section id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`} tabIndex={0} class="panel">
         <h1>{labels[tab].title}</h1>
-        <p class="empty">{labels[tab].empty}</p>
+        <p class="empty">{state ? labels[tab].empty : "Loading specs…"}</p>
       </section>
     </div>
   );
