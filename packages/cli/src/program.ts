@@ -1,5 +1,6 @@
 import type { AdapterRegistry, Clock, FileSystem, Git } from "@specflow/core";
-import { Command, CommanderError } from "commander";
+import { Command, CommanderError, Option } from "commander";
+import { driftCommand } from "./commands/drift.js";
 import { harnessCheckCommand } from "./commands/harness.js";
 import { initCommand } from "./commands/init.js";
 import { lintCommand } from "./commands/lint.js";
@@ -79,6 +80,19 @@ export async function run(argv: string[], io: Io): Promise<number> {
     .option("--json", "print machine-readable output")
     .action(async (target: string, options: { json?: boolean }) => {
       code = await traceCommand(io, target, { json: options.json ?? false });
+    });
+
+  program
+    .command("drift")
+    .description("Find requirements whose code and spec no longer agree")
+    .argument("[target]", "feature, or feature/ID such as auth/R3")
+    .option("--json", "print machine-readable output")
+    .addOption(new Option("--fail-on <severity>", "exit 1 when a finding is at least this severe").choices(["warning", "error"]))
+    .action(async (target: string | undefined, options: { json?: boolean; failOn?: "warning" | "error" }) => {
+      code = await driftCommand(io, target, {
+        json: options.json ?? false,
+        ...(options.failOn !== undefined && { failOn: options.failOn }),
+      });
     });
 
   program

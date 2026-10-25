@@ -1,0 +1,112 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`specflow drift > reports the code-changed-since-spec fixture > json 1`] = `
+"{
+  "schema": "specflow.drift/v1",
+  "root": "<root>",
+  "summary": {
+    "errors": 0,
+    "warnings": 1,
+    "infos": 0
+  },
+  "findings": [
+    {
+      "rule": "drift/code-changed-since-spec",
+      "severity": "warning",
+      "message": "src/login.ts changed in <short> \\"fix: reject empty passwords\\" after R1 was last implemented, and R1's text has not changed since",
+      "location": {
+        "file": ".specs/auth/requirements.md",
+        "startLine": 3,
+        "endLine": 3
+      },
+      "feature": "auth",
+      "id": "R1",
+      "evidence": {
+        "file": "src/login.ts",
+        "commit": "<hash>",
+        "subject": "fix: reject empty passwords"
+      }
+    }
+  ]
+}
+"
+`;
+
+exports[`specflow drift > reports the code-changed-since-spec fixture > text 1`] = `
+".specs/auth/requirements.md:3: warning drift/code-changed-since-spec: src/login.ts changed in <short> "fix: reject empty passwords" after R1 was last implemented, and R1's text has not changed since
+
+1 finding. Acknowledge one with a drift-ack: <commit> line on the requirement.
+"
+`;
+
+exports[`specflow drift > reports the spec-changed-since-code fixture > json 1`] = `
+"{
+  "schema": "specflow.drift/v1",
+  "root": "<root>",
+  "summary": {
+    "errors": 0,
+    "warnings": 1,
+    "infos": 0
+  },
+  "findings": [
+    {
+      "rule": "drift/spec-changed-since-code",
+      "severity": "warning",
+      "message": "R2 changed in <short> \\"docs(specs): sign out ends every session\\" and no commit referencing it came after",
+      "location": {
+        "file": ".specs/auth/requirements.md",
+        "startLine": 11,
+        "endLine": 11
+      },
+      "feature": "auth",
+      "id": "R2",
+      "evidence": {
+        "commit": "<hash>",
+        "subject": "docs(specs): sign out ends every session"
+      }
+    }
+  ]
+}
+"
+`;
+
+exports[`specflow drift > reports the spec-changed-since-code fixture > text 1`] = `
+".specs/auth/requirements.md:11: warning drift/spec-changed-since-code: R2 changed in <short> "docs(specs): sign out ends every session" and no commit referencing it came after
+
+1 finding. Acknowledge one with a drift-ack: <commit> line on the requirement.
+"
+`;
+
+exports[`specflow drift > reports the unimplemented fixture > json 1`] = `
+"{
+  "schema": "specflow.drift/v1",
+  "root": "<root>",
+  "summary": {
+    "errors": 0,
+    "warnings": 1,
+    "infos": 0
+  },
+  "findings": [
+    {
+      "rule": "drift/unimplemented",
+      "severity": "warning",
+      "message": "R3 has all its tasks done (auth/T3) but no commit references it; trailers were probably missed",
+      "location": {
+        "file": ".specs/auth/requirements.md",
+        "startLine": 19,
+        "endLine": 19
+      },
+      "feature": "auth",
+      "id": "R3"
+    }
+  ]
+}
+"
+`;
+
+exports[`specflow drift > reports the unimplemented fixture > text 1`] = `
+".specs/auth/requirements.md:19: warning drift/unimplemented: R3 has all its tasks done (auth/T3) but no commit references it; trailers were probably missed
+
+1 finding. Acknowledge one with a drift-ack: <commit> line on the requirement.
+"
+`;

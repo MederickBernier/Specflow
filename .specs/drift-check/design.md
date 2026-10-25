@@ -58,7 +58,8 @@ Trailers record intent, not what the code does. Dogfooding (`docs/dogfood/2026-1
 ## CLI surface
 
 - `specflow drift [<feature>[/<id>]] [--llm] [--json]`
-- Exit code 0 always, unless `--fail-on warning` is passed, for CI use.
+- Exit code 0 always, unless `--fail-on warning|error` is passed and a finding is at least that severe, for CI use. 2 when git fails or specs cannot be loaded.
+- Text output matches `lint` (`file:line: severity rule: message`); `--json` prints `specflow.drift/v1` with `summary` and `findings`, including `evidence`.
 
 ## Alternatives considered
 

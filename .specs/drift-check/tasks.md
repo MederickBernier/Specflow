@@ -43,7 +43,7 @@ depends: T4, T5
 Acked fixture reports nothing; adding a newer commit makes the finding return.
 
 ## T7: CLI drift command [R7]
-status: todo
+status: done
 files: packages/cli/src/commands/drift.ts
 depends: T6
 
