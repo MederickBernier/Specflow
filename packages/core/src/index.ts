@@ -54,3 +54,5 @@ export type { RunError, RunHandle, RunnerDeps, RunRequest } from "./run/runner.j
 export { cancelGraceMs, startRun } from "./run/runner.js";
 export type { RecordError, Recording, RunOutcome } from "./run/recorder.js";
 export { changedFiles, messageFileName, recordRun } from "./run/recorder.js";
+export type { StatusError, StatusSnapshot } from "./run/status.js";
+export { restoreTaskStatus, setTaskStatus, tasksFile } from "./run/status.js";

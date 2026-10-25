@@ -50,7 +50,7 @@ depends: T5
 On a fixture repo: staged mode stages files and writes the prepared message; auto mode commits with all three trailers; failed runs change nothing.
 
 ## T8: Task status updates [R7]
-status: todo
+status: done
 files: packages/core/src/run/status.ts
 depends: T5
 

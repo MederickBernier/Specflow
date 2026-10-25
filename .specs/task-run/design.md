@@ -168,6 +168,10 @@ Template lives in `core/src/run/prompt.ts` (`buildTaskPrompt(fs, tree, { feature
 
 A targeted line edit on the task's `status:` line using the location from the spec model. If the line is missing, it is inserted right after the heading.
 
+- `setTaskStatus(fs, tree, target, status)` re-reads and re-parses `tasks.md` first, since the harness may have edited it, and changes only the value, keeping the key's spacing, trailing whitespace and the line ending.
+- It returns a `StatusSnapshot` of the original line (`null` when there was none). `restoreTaskStatus` puts that line back, or removes the inserted one, so a failed, cancelled or discarded run leaves the file byte-identical.
+- The shell sets `doing` before the run and `done` before recording, passing `tasksFile(tree, feature)` in the recorder's `files` so the edit is staged or committed with the run's changes; on failure it restores the snapshot.
+
 ## Trace
 
 `git log --format=<custom> --name-status` filtered by `--grep` on trailer keys, then parsed with `git interpret-trailers --parse`. Results are grouped per requirement and per task.
