@@ -10,7 +10,7 @@ SpecTree + TraceIndex + git history
    -> optional LLM pass (per finding)   -> Finding[] with verdict
 ```
 
-Drift findings reuse the `Finding` type from `core-spec-model`, with `rule` values prefixed `drift/`.
+Drift findings reuse the `Finding` type from `core-spec-model`, with `rule` values prefixed `drift/`. They point at the requirement's heading and carry `evidence: { file, commit, subject }` naming what caused them. Only approved requirements are checked. Each rule is `{ id, check(context) }` over a `DriftContext` (`tree`, the index, and spec changes for traced requirements) built once by `buildDriftContext`. `code-changed-since-spec` reports one finding per file, naming the newest offending commit.
 
 ## Building blocks
 

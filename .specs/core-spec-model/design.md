@@ -73,6 +73,7 @@ type Finding = {
   location: Location;
   feature: string;
   id?: string;
+  evidence?: { file?: string; commit?: string; subject?: string };  // drift findings
 };
 ```
 

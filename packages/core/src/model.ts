@@ -73,4 +73,6 @@ export type Finding = {
   location: Location;
   feature: string;
   id?: string;
+  /** What caused a drift finding: the file and commit involved. */
+  evidence?: { file?: string; commit?: string; subject?: string };
 };

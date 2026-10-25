@@ -22,8 +22,8 @@ depends: T2
 Returns the last commit that changed a requirement's text, correct even after the requirement moved within the file.
 
 ## T4: Rule code-changed-since-spec [R1, R7]
-status: todo
-files: packages/core/src/drift/rules/code-changed.ts
+status: done
+files: packages/core/src/drift/rules/code-changed.ts, packages/core/src/drift/context.ts, packages/core/src/model.ts
 depends: T2, T3, T1
 
 Matches its fixture exactly, no findings on the clean fixture.

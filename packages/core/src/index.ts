@@ -69,3 +69,6 @@ export type { DriftIndex, RequirementIndex } from "./drift/index.js";
 export { buildDriftIndex } from "./drift/index.js";
 export type { SpecChange } from "./drift/spec-history.js";
 export { lastSpecChange } from "./drift/spec-history.js";
+export type { DriftContext, DriftRule } from "./drift/context.js";
+export { buildDriftContext } from "./drift/context.js";
+export { codeChangedSinceSpec } from "./drift/rules/code-changed.js";
