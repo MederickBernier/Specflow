@@ -14,8 +14,8 @@ depends: T1
 A script creates fixture repos with one clean spec tree and one broken tree per lint rule. Run before tests.
 
 ## T3: Define core types and FileSystem interface [R4, R8]
-status: todo
-files: packages/core/src/model.ts, packages/core/src/fs.ts
+status: done
+files: packages/core/src/model.ts, packages/core/src/fs.ts, packages/core/src/node/fs.ts
 depends: T1
 
 Types from the design compile, with a Node and an in-memory FileSystem implementation.

@@ -1,2 +1,2 @@
 // Node implementations of the core I/O interfaces. Nothing else in core imports this.
-export {};
+export { NodeFileSystem } from "./fs.js";

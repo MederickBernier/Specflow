@@ -15,6 +15,8 @@ No caching in v1. The tree is small; reparsing on every call keeps things simple
 ```ts
 type Location = { file: string; startLine: number; endLine: number };
 
+type Criterion = { keyword: "Given" | "When" | "Then" | "And"; text: string };
+
 type Requirement = {
   feature: string;
   id: string;                 // "R3"
@@ -46,6 +48,15 @@ type Feature = {
   requirements: Requirement[];
   tasks: Task[];
   design?: { markdown: string; location: Location };
+};
+
+type Config = {
+  version: 1;
+  specsDir: string;
+  harness: { default: string; adapters: Record<string, { extraArgs: string[] }> };
+  ids: { requirement: string; task: string };
+  commit: { mode: "staged" | "auto"; trailers: boolean };
+  drift: { llm: boolean; ignore: string[] };
 };
 
 type SpecTree = { root: string; config: Config; features: Feature[] };
@@ -84,6 +95,8 @@ Each rule is a function `(tree: SpecTree) => Finding[]` registered in a list. Ru
 
 Validated with zod. Defaults live in one `defaultConfig` constant, merged deeply with the file.
 
+`Config` is the normalized form: in the file, adapter settings sit next to `harness.default` (`harness.claude-code.extraArgs`); the loader collects every key other than `default` into `harness.adapters`.
+
 ## Interfaces
 
 ```ts
@@ -94,6 +107,8 @@ interface FileSystem {
   listDir(path: string): Promise<string[]>;
 }
 ```
+
+Paths are absolute. `readFile` rejects on a missing file, `writeFile` creates parent directories, `exists` is true for files and directories, `listDir` returns sorted entry names and rejects on a missing directory.
 
 A Node implementation lives in `core/node`. Tests use an in-memory implementation.
 
