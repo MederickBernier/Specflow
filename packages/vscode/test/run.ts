@@ -19,11 +19,14 @@ for (const name of Object.keys(process.env)) {
 const here = fileURLToPath(new URL(".", import.meta.url));
 const extensionDevelopmentPath = resolve(here, "..");
 const extensionTestsPath = resolve(here, "../dist-test/smoke.js");
-const withSpecs = resolve(here, "../../../fixtures/repos/clean");
+const cleanFixture = resolve(here, "../../../fixtures/repos/clean");
 
+// Copies, so tests may edit spec files.
 const scratch = mkdtempSync(join(tmpdir(), "specflow-smoke-"));
+const withSpecs = join(scratch, "clean");
 const withoutSpecs = join(scratch, "empty");
-cpSync(join(withSpecs, "src"), join(withoutSpecs, "src"), { recursive: true });
+cpSync(cleanFixture, withSpecs, { recursive: true });
+cpSync(join(cleanFixture, "src"), join(withoutSpecs, "src"), { recursive: true });
 
 try {
   for (const [label, workspace] of [

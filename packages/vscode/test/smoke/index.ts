@@ -32,6 +32,32 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
     assert.ok(commands.includes("specflow.init"));
   });
 
+  // vscode-extension/R2: saving a spec file reloads the tree once, within 1 second.
+  test("reloads the spec tree once after spec files are saved", async () => {
+    await eventually(() => extension().isActive, "activation");
+    const api = extension().exports as { services: () => { tree?: { features: { name: string; tasks: { id: string }[] }[] }; onDidChange: vscode.Event<unknown> }[] };
+    const [service] = api.services();
+    assert.ok(service?.tree, "tree loaded");
+    let changes = 0;
+    const listener = service.onDidChange(() => changes++);
+
+    const root = vscode.workspace.workspaceFolders![0]!.uri;
+    const tasks = vscode.Uri.joinPath(root, ".specs/accounts/tasks.md");
+    const text = new TextDecoder().decode(await vscode.workspace.fs.readFile(tasks));
+    const started = Date.now();
+    await vscode.workspace.fs.writeFile(tasks, new TextEncoder().encode(`${text}\n## T4: Added in a smoke test []\n`));
+    await vscode.workspace.fs.writeFile(vscode.Uri.joinPath(root, ".specs/accounts/design.md"), new TextEncoder().encode("# changed\n"));
+
+    await eventually(() => changes > 0, "onDidChange", 1000);
+    const elapsed = Date.now() - started;
+    await new Promise((r) => setTimeout(r, 600));
+    listener.dispose();
+    assert.equal(changes, 1, "one change event for the burst");
+    assert.ok(elapsed < 1000, `refreshed in ${elapsed} ms`);
+    const accounts = service.tree!.features.find((f) => f.name === "accounts")!;
+    assert.deepEqual(accounts.tasks.map((t) => t.id), ["T1", "T2", "T3", "T4"]);
+  });
+
   test("refuses to initialize over existing specs", async () => {
     await vscode.commands.executeCommand("specflow.init");
     const product = await vscode.workspace.findFiles(".specs/product.md");
@@ -44,7 +70,7 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
     assert.equal(extension().isActive, false);
   });
 
-  test("Initialize specs activates the extension and creates .specs/", async () => {
+  test("Initialize specs activates the extension, creates .specs/ and starts watching it", async () => {
     const result = await vscode.commands.executeCommand("specflow.init");
     assert.equal(extension().isActive, true);
     assert.equal((result as { ok: boolean }).ok, true, JSON.stringify(result));
@@ -69,6 +95,8 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
       ".specs/README.md",
       ".specs/tech.md",
     ].sort());
+    const api = extension().exports as { services: () => { tree?: { features: { name: string }[] } }[] };
+    assert.deepEqual(api.services()[0]?.tree?.features.map((f) => f.name), ["example"]);
   });
 }
 

@@ -8,8 +8,8 @@ depends: core-spec-model/T7, core-spec-model/T10
 Activates only on workspaces with specs; smoke test covers both cases.
 
 ## T2: SpecService with file watching [R2]
-status: todo
-files: packages/vscode/src/spec-service.ts
+status: done
+files: packages/vscode/src/spec-service.ts, packages/vscode/src/debounce.ts
 depends: T1
 
 Saving a spec file fires `onDidChange` once after the debounce.

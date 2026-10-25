@@ -24,7 +24,8 @@ extension.ts
 ## Spec loading
 
 - `SpecService` wraps `loadSpecTree` with `VsCodeFileSystem`, a `FileSystem` implementation over `workspace.fs` (`file:` URIs; core paths are `uri.fsPath` with forward slashes).
-- A `FileSystemWatcher` on `.specs/**` triggers a debounced reload (300 ms).
+- A `FileSystemWatcher` on `.specs/**` (and on `specsDir/**` when config moves it) triggers a debounced reload (300 ms); `onDidChange` fires once per burst. The service keeps the last good tree and the last load error separately.
+- `activate` returns `{ services }`, used by the smoke tests and later features. Services are created and disposed as spec roots appear and disappear (after init, or when workspace folders change).
 - One `SpecService` per workspace folder that has specs; multi-root workspaces are supported but not optimized.
 
 ## Diagnostics

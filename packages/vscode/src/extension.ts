@@ -1,5 +1,6 @@
 import { findRoot, type InitError, type InitResult, initSpecs, type Result } from "@specflow/core";
 import * as vscode from "vscode";
+import { SpecService } from "./spec-service.js";
 import { corePath, VsCodeFileSystem } from "./vscode-fs.js";
 
 /** Context key: true when a workspace folder has specs. Commands other than init are only shown then. */
@@ -7,13 +8,21 @@ export const hasSpecsKey = "specflow.hasSpecs";
 
 const fs = new VsCodeFileSystem();
 
+/** One service per spec root, created as roots appear. */
+const services = new Map<string, SpecService>();
+
+/** What `activate` returns; also used by the smoke tests. */
+export type SpecflowApi = { services: () => SpecService[] };
+
 /** Runs when a workspace contains `.specs/`, or when `Initialize specs` is invoked. */
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
+export async function activate(context: vscode.ExtensionContext): Promise<SpecflowApi> {
   context.subscriptions.push(
     vscode.commands.registerCommand("specflow.init", () => initialize()),
     vscode.workspace.onDidChangeWorkspaceFolders(() => refreshContext()),
+    { dispose: () => [...services.values()].forEach((s) => s.dispose()) },
   );
   await refreshContext();
+  return { services: () => [...services.values()] };
 }
 
 export function deactivate(): void {}
@@ -29,8 +38,22 @@ export async function specRoots(): Promise<string[]> {
   return roots;
 }
 
+// Keeps one SpecService per spec root and the context key in sync with the workspace.
 async function refreshContext(): Promise<void> {
-  await vscode.commands.executeCommand("setContext", hasSpecsKey, (await specRoots()).length > 0);
+  const roots = await specRoots();
+  for (const [root, service] of services) {
+    if (!roots.includes(root)) {
+      service.dispose();
+      services.delete(root);
+    }
+  }
+  for (const root of roots) {
+    if (services.has(root)) continue;
+    const service = new SpecService(root, fs);
+    services.set(root, service);
+    await service.start();
+  }
+  await vscode.commands.executeCommand("setContext", hasSpecsKey, roots.length > 0);
 }
 
 /** The `specflow.init` command. Returns what happened, for tests; undefined when cancelled. */
