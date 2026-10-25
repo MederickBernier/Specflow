@@ -77,8 +77,8 @@ depends: T10
 Build one real feature in another repo using only `specflow run`. Write down what hurt before starting the drift-check feature.
 
 ## T12: Git, Spawner and Clock interfaces []
-status: todo
-files: packages/core/src/git.ts, packages/core/src/spawner.ts, packages/core/src/clock.ts, packages/core/src/node/**
+status: done
+files: packages/core/src/git.ts, packages/core/src/spawner.ts, packages/core/src/clock.ts, packages/core/src/queue.ts, packages/core/src/node/**
 depends: core-spec-model/T3
 
 Interfaces from the design compile; Node implementations in `core/node` pass an integration test against a temp git repo; in-memory fakes exist for tests. No other `core` module imports `core/node`.

@@ -45,10 +45,13 @@ type RunInput = { cwd: string; prompt: string; extraArgs: string[] };
 Defined in `core`, implemented for Node in `core/node`, faked in tests.
 
 ```ts
+type GitError = { args: string[]; exitCode: number | null; stderr: string; message: string };
+
 interface Git {
-  // Runs `git <args>` in cwd with an argument array, never a shell string.
-  run(args: string[], opts?: { cwd?: string; stdin?: string }): Promise<Result<string>>;
+  // Runs `git <args>` in cwd with an argument array, never a shell string. Stdout is returned exactly.
+  run(args: string[], opts?: { cwd?: string; stdin?: string }): Promise<Result<string, GitError>>;
   // Same, but yields stdout line by line, for large `git log` output.
+  // Throws GitCommandError (carrying the GitError) at the end if git fails; stopping early kills git.
   lines(args: string[], opts?: { cwd?: string }): AsyncIterable<string>;
 }
 
@@ -57,9 +60,10 @@ interface Spawner {
 }
 
 interface SpawnedProcess {
-  stdout: AsyncIterable<string>;   // line by line
+  stdout: AsyncIterable<string>;   // line by line, buffered from the start
   stderr: AsyncIterable<string>;
-  exit: Promise<{ code: number | null; signal: string | null }>;
+  // Never rejects. `error` is set when the process could not start (e.g. ENOENT).
+  exit: Promise<{ code: number | null; signal: string | null; error?: { code?: string; message: string } }>;
   kill(signal: "SIGTERM" | "SIGKILL"): void;
 }
 
@@ -67,6 +71,8 @@ interface Clock {
   now(): Date;
 }
 ```
+
+Both streams are buffered without limit as soon as the process starts, so a caller reading only stdout cannot stall a process that writes a lot to stderr. Test fakes (`FakeGit`, `FakeSpawner`/`FakeProcess`, `FakeClock`) live next to the interfaces in `core`; Node implementations (`NodeGit`, `NodeSpawner`, `SystemClock`) in `core/node`. `NodeGit` sets `GIT_TERMINAL_PROMPT=0` and `LC_ALL=C`.
 
 `Git` stays deliberately thin: typed helpers (`status`, `stage`, `commit`, `log`, `isAncestor`) are plain functions in `core` built on `run` and `lines`, so their parsing is unit tested without a real repo.
 
