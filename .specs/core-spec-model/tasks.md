@@ -63,8 +63,8 @@ depends: T8
 Text and `--json` output covered by snapshots, exit code 1 on errors.
 
 ## T10: CLI init command [R7]
-status: todo
-files: packages/cli/src/commands/init.ts, packages/core/src/templates/**
+status: done
+files: packages/cli/src/commands/init.ts, packages/core/src/templates/**, packages/core/src/init.ts
 depends: T9
 
 `init` then `lint` passes; a second `init` refuses without `--force` and never overwrites.

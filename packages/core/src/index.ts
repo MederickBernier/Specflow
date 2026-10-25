@@ -24,3 +24,6 @@ export { parseTasks } from "./parse/tasks.js";
 export type { LintRule } from "./lint/lint.js";
 export { lint, lintRules } from "./lint/lint.js";
 export { fullRef, resolveRef } from "./lint/refs.js";
+export type { InitError, InitResult } from "./init.js";
+export { initSpecs } from "./init.js";
+export { specTemplates } from "./templates/templates.js";

@@ -133,7 +133,9 @@ A Node implementation lives in `core/node`. Tests use an in-memory implementatio
 
 ## CLI surface
 
-- `specflow init [--force]`
+- `specflow init [--force] [--json]`, exit code 1 when it refuses
+
+`initSpecs(fs, dir, { force })` lives in `core`. Templates are string constants in `core/src/templates/`, so bundles need no asset files. It refuses when `findRoot` finds a spec root at or above `dir`; with `force` it writes only the missing template files into that root. Existing files are never overwritten. The example feature passes lint.
 - `specflow lint [--json]`, exit code 1 when any error is found
 - `specflow show <feature>[/<id>] [--json]`, exit code 1 when the target does not exist
 

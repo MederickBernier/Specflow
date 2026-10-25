@@ -1,5 +1,6 @@
 import type { FileSystem } from "@specflow/core";
 import { Command, CommanderError } from "commander";
+import { initCommand } from "./commands/init.js";
 import { lintCommand } from "./commands/lint.js";
 import { showCommand } from "./commands/show.js";
 
@@ -21,6 +22,15 @@ export async function run(argv: string[], io: Io): Promise<number> {
     .description("Spec-driven development: specs, tasks and traceability in git")
     .exitOverride()
     .configureOutput({ writeOut: io.stdout, writeErr: io.stderr });
+
+  program
+    .command("init")
+    .description("Create .specs/ with steering templates, config.yml and an example feature")
+    .option("--force", "add missing template files to an existing .specs/; never overwrites")
+    .option("--json", "print machine-readable output")
+    .action(async (options: { force?: boolean; json?: boolean }) => {
+      code = await initCommand(io, { force: options.force ?? false, json: options.json ?? false });
+    });
 
   program
     .command("lint")

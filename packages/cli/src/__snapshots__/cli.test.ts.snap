@@ -1,5 +1,19 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`specflow init > creates .specs/ that passes lint 1`] = `
+"Created 7 files:
+  .specs/README.md
+  .specs/product.md
+  .specs/tech.md
+  .specs/config.yml
+  .specs/example/requirements.md
+  .specs/example/design.md
+  .specs/example/tasks.md
+
+Next: edit .specs/product.md and .specs/tech.md, then run \`specflow lint\`.
+"
+`;
+
 exports[`specflow lint > exits 0 when there are only warnings 1`] = `
 ".specs/billing/requirements.md:11: warning orphan-requirement: Approved requirement R2 has no task
 
