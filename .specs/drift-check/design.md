@@ -52,8 +52,18 @@ Trailers record intent, not what the code does. Dogfooding (`docs/dogfood/2026-1
 ## Performance
 
 - One `git log --name-status` call for the whole history, parsed in a stream.
-- `git log -L` only for requirements that have trace commits.
+- `git log -L` only for requirements that have trace commits, at most 8 at a time; `git show HEAD:<file>` once per requirements file.
 - No caching in v1; measure against the R8 target first.
+
+Measured with `pnpm bench` (`bench/drift.bench.ts`: 5,000 commits, 10 features × 20 requirements, generated with `git fast-import` from a seeded PRNG), 2026-10-25:
+
+| Setup | Time |
+| --- | --- |
+| Sequential `-L` lookups, Linux (WSL), 12 cores | 9.2 s (fails R8) |
+| 8 concurrent lookups, Linux (WSL), 12 cores | 2.0 s |
+| 8 concurrent lookups, native Windows, same machine | 3.7 s |
+
+Almost all of the time is the per-requirement `git log -L` (about 36 ms each); the full history log takes 160 ms. If R8 fails on slower machines, the next step is one `git log -p` per requirements file with our own range tracking, replacing 200 processes with 10.
 
 ## CLI surface
 

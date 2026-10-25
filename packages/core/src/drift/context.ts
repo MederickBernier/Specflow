@@ -14,22 +14,39 @@ export type DriftContext = {
   specChanges: Map<string, SpecChange | undefined>;
 };
 
-/** Reads history once and the spec history of every traced requirement. */
+/** How many `git log -L` lookups run at once. Each is one git process. */
+export const specHistoryConcurrency = 8;
+
+/**
+ * Reads history once and the spec history of every traced requirement.
+ * The `git log -L` lookups run concurrently (drift-check/R8); results are
+ * keyed by requirement, so output does not depend on their order.
+ */
 export async function buildDriftContext(git: Git, tree: SpecTree): Promise<Result<DriftContext, GitError>> {
   const history = await readHistory(git, tree.root);
   if (!history.ok) return history;
   const index = buildDriftIndex(tree, history.value);
 
+  const traced = tree.features.flatMap((feature) =>
+    feature.requirements
+      .map((requirement) => ({ key: fullRef(feature.name, requirement.id), requirement }))
+      .filter(({ key }) => (index.requirements.get(key)?.traceCommits.length ?? 0) > 0),
+  );
+
   const specChanges = new Map<string, SpecChange | undefined>();
-  for (const feature of tree.features) {
-    for (const requirement of feature.requirements) {
-      const key = fullRef(feature.name, requirement.id);
-      if ((index.requirements.get(key)?.traceCommits.length ?? 0) === 0) continue;
-      const change = await lastSpecChange(git, tree, requirement);
-      if (!change.ok) return err(change.error);
-      specChanges.set(key, change.value);
+  const headFiles = new Map<string, Promise<Result<string, GitError>>>();
+  let next = 0;
+  let failure: GitError | undefined;
+  const worker = async () => {
+    while (next < traced.length && !failure) {
+      const { key, requirement } = traced[next++]!;
+      const change = await lastSpecChange(git, tree, requirement, headFiles);
+      if (change.ok) specChanges.set(key, change.value);
+      else failure ??= change.error;
     }
-  }
+  };
+  await Promise.all(Array.from({ length: Math.min(specHistoryConcurrency, traced.length) }, worker));
+  if (failure) return err(failure);
   return ok({ tree, index, specChanges });
 }
 

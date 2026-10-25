@@ -6,6 +6,7 @@
     "erasableSyntaxOnly": true
   },
   "include": [
+    "bench/*.ts",
     "fixtures/*.ts",
     "fixtures/drift/*.ts",
     "fixtures/streams/*.ts",

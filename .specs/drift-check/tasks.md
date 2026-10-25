@@ -50,8 +50,8 @@ depends: T6
 Snapshot tests on text and JSON; two runs produce identical output; `--fail-on` sets the exit code.
 
 ## T8: Performance benchmark [R8]
-status: todo
-files: bench/drift.bench.ts
+status: done
+files: bench/drift.bench.ts, packages/core/src/drift/context.ts, packages/core/src/drift/spec-history.ts
 depends: T7
 
 Generated repo with 5,000 commits and 200 requirements runs under 5 seconds; result recorded in the PR.
