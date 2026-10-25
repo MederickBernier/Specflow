@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -28,7 +28,8 @@ function git(...args: string[]): string {
 
 /** A copy of the clean fixture repo with a local identity, in `commit.mode`. */
 function repo(mode: "staged" | "auto" = "staged") {
-  dir = toPosixPath(mkdtempSync(join(tmpdir(), "specflow-cli-")));
+  // The long path, as git reports it: Windows can hand out 8.3 short temp paths (RUNNER~1).
+  dir = toPosixPath(realpathSync.native(mkdtempSync(join(tmpdir(), "specflow-cli-"))));
   cpSync(join(fixtures, "repos/clean"), dir, { recursive: true });
   for (const [key, value] of [["user.name", "Test"], ["user.email", "test@example.com"], ["commit.gpgsign", "false"]]) {
     git("config", key!, value!);

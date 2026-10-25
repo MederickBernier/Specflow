@@ -1,0 +1,764 @@
+/* Colors and fonts come from VS Code's theme variables only (workbench-ui/R1). */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  color: var(--vscode-foreground);
+  background: var(--vscode-editor-background);
+}
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  position: sticky;
+  top: 0;
+  background: var(--vscode-editor-background);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--vscode-descriptionForeground);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--vscode-foreground);
+}
+
+.tab.selected {
+  color: var(--vscode-foreground);
+  border-bottom-color: var(--vscode-focusBorder);
+}
+
+.tab:focus-visible,
+.panel:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}
+
+.panel {
+  padding: 12px 20px;
+}
+
+.panel h1 {
+  font-size: 1.3em;
+  font-weight: 600;
+  margin: 8px 0;
+}
+
+.empty {
+  color: var(--vscode-descriptionForeground);
+}
+
+button.secondary {
+  padding: 2px 10px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 2px;
+  color: var(--vscode-button-secondaryForeground);
+  background: var(--vscode-button-secondaryBackground);
+  font: inherit;
+  cursor: pointer;
+}
+
+button.secondary:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+button:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+
+.muted {
+  color: var(--vscode-descriptionForeground);
+}
+
+/* Overview (workbench-ui/R2) */
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 8px 0 20px;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  min-width: 200px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  background: var(--vscode-sideBar-background, transparent);
+}
+
+.stat-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 0.85em;
+  color: var(--vscode-descriptionForeground);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stat.ok > .codicon {
+  color: var(--vscode-testing-iconPassed, var(--vscode-charts-green));
+}
+
+.stat.warn > .codicon {
+  color: var(--vscode-editorWarning-foreground);
+}
+
+.stat.error > .codicon {
+  color: var(--vscode-errorForeground);
+}
+
+.root h2 {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin: 16px 0 8px;
+}
+
+.load-error {
+  padding: 8px 12px;
+  border: 1px solid var(--vscode-inputValidation-errorBorder);
+  background: var(--vscode-inputValidation-errorBackground);
+  border-radius: 4px;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.feature-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  padding: 12px;
+  text-align: left;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  color: var(--vscode-foreground);
+  background: var(--vscode-editorWidget-background);
+  font: inherit;
+  cursor: pointer;
+}
+
+.feature-card:hover {
+  border-color: var(--vscode-focusBorder);
+}
+
+.feature-name {
+  font-weight: 600;
+  font-size: 1.05em;
+}
+
+.feature-card progress {
+  width: 100%;
+  height: 6px;
+  appearance: none;
+  border: none;
+  border-radius: 3px;
+  background: var(--vscode-progressBar-background);
+  opacity: 0.9;
+}
+
+.feature-card progress::-webkit-progress-bar {
+  border-radius: 3px;
+  background: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+}
+
+.feature-card progress::-webkit-progress-value {
+  border-radius: 3px;
+  background: var(--vscode-progressBar-background);
+}
+
+.progress-label,
+.counts {
+  font-size: 0.9em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.counts[data-kind="tasks"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.count.done .codicon {
+  color: var(--vscode-testing-iconPassed, var(--vscode-charts-green));
+}
+
+.count.blocked .codicon {
+  color: var(--vscode-errorForeground);
+}
+
+.drift-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--vscode-editorWarning-foreground);
+  font-size: 0.9em;
+}
+
+button.primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 2px;
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  font: inherit;
+  cursor: pointer;
+}
+
+button.primary:hover:not(:disabled) {
+  background: var(--vscode-button-hoverBackground);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+select {
+  padding: 2px 4px;
+  color: var(--vscode-dropdown-foreground);
+  background: var(--vscode-dropdown-background);
+  border: 1px solid var(--vscode-dropdown-border, transparent);
+  font: inherit;
+}
+
+.chip {
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 0.85em;
+  color: var(--vscode-badge-foreground);
+  background: var(--vscode-badge-background);
+}
+
+/* Board (workbench-ui/R3) */
+
+.board-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 8px 0 16px;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(200px, 1fr));
+  gap: 12px;
+  overflow-x: auto;
+}
+
+.column {
+  padding: 8px;
+  border-radius: 4px;
+  background: var(--vscode-sideBar-background, var(--vscode-editorWidget-background));
+}
+
+.column h2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.column.done h2 .codicon {
+  color: var(--vscode-testing-iconPassed, var(--vscode-charts-green));
+}
+
+.column.blocked h2 .codicon {
+  color: var(--vscode-errorForeground);
+}
+
+.column ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.task-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  background: var(--vscode-editor-background);
+}
+
+.task-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.task-id {
+  font-family: var(--vscode-editor-font-family);
+  font-weight: 600;
+}
+
+.task-card .muted {
+  font-size: 0.9em;
+}
+
+.waiting {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.9em;
+  color: var(--vscode-editorWarning-foreground);
+}
+
+.card-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+/* Diffs (workbench-ui/R4, R5) */
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 2px;
+}
+
+.segmented button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: none;
+  color: var(--vscode-foreground);
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.segmented button.selected {
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+}
+
+.file-diff {
+  margin: 0 0 16px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.file-diff-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: var(--vscode-sideBarSectionHeader-background, var(--vscode-editorWidget-background));
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.file-path {
+  flex: 1;
+  font-family: var(--vscode-editor-font-family);
+  overflow-wrap: anywhere;
+}
+
+.change-badge {
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 0.85em;
+  color: var(--vscode-badge-foreground);
+  background: var(--vscode-badge-background);
+}
+
+.change-badge.added {
+  color: var(--vscode-gitDecoration-addedResourceForeground);
+  background: none;
+  border: 1px solid currentColor;
+}
+
+.change-badge.deleted {
+  color: var(--vscode-gitDecoration-deletedResourceForeground);
+  background: none;
+  border: 1px solid currentColor;
+}
+
+.change-badge.renamed {
+  color: var(--vscode-gitDecoration-renamedResourceForeground);
+  background: none;
+  border: 1px solid currentColor;
+}
+
+.line-counts {
+  font-family: var(--vscode-editor-font-family);
+}
+
+.additions {
+  color: var(--vscode-gitDecoration-addedResourceForeground);
+}
+
+.deletions {
+  color: var(--vscode-gitDecoration-deletedResourceForeground);
+}
+
+.diff-placeholder {
+  margin: 0;
+  padding: 12px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.diff-scroll {
+  overflow-x: auto;
+}
+
+table.diff {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--vscode-editor-font-family);
+  font-size: var(--vscode-editor-font-size);
+  line-height: 1.4;
+}
+
+table.diff.split {
+  table-layout: fixed;
+}
+
+table.diff td {
+  padding: 0 6px;
+  vertical-align: top;
+}
+
+table.diff td.ln {
+  width: 1%;
+  min-width: 3ch;
+  text-align: right;
+  color: var(--vscode-editorLineNumber-foreground);
+  user-select: none;
+  white-space: nowrap;
+}
+
+table.diff.split td.ln {
+  width: 5ch;
+}
+
+table.diff td.sign {
+  width: 1ch;
+  padding: 0 2px;
+  user-select: none;
+}
+
+table.diff.split td.sign {
+  width: 2ch;
+}
+
+table.diff td.code {
+  white-space: pre;
+}
+
+table.diff.split td.code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+table.diff tr.add td,
+table.diff td.add {
+  background: var(--vscode-diffEditor-insertedLineBackground, rgba(155, 185, 85, 0.2));
+}
+
+table.diff tr.del td,
+table.diff td.del {
+  background: var(--vscode-diffEditor-removedLineBackground, rgba(255, 0, 0, 0.2));
+}
+
+table.diff td.empty-side {
+  background: var(--vscode-diffEditor-diagonalFill, transparent);
+  opacity: 0.4;
+}
+
+table.diff tr.hunk-header td {
+  padding: 2px 8px;
+  color: var(--vscode-descriptionForeground);
+  background: var(--vscode-diffEditor-unchangedRegionBackground, var(--vscode-editorWidget-background));
+}
+
+.no-newline {
+  color: var(--vscode-editorWarning-foreground);
+}
+
+/* Review (workbench-ui/R4) */
+
+.review-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 12px;
+}
+
+.review-title {
+  flex: 1;
+}
+
+.scope-warning {
+  padding: 6px 10px;
+  border-left: 3px solid var(--vscode-editorWarning-foreground);
+  background: var(--vscode-inputValidation-warningBackground, transparent);
+}
+
+.spec-notes {
+  margin: 12px 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--vscode-textLink-foreground);
+  background: var(--vscode-textBlockQuote-background);
+}
+
+.spec-notes h2 {
+  margin: 0 0 4px;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.spec-notes ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.review-files {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+}
+
+.review-files li {
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+.review-files li.selected {
+  background: var(--vscode-list-activeSelectionBackground);
+  color: var(--vscode-list-activeSelectionForeground);
+}
+
+button.link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--vscode-textLink-foreground);
+  font-family: var(--vscode-editor-font-family);
+  cursor: pointer;
+}
+
+button.link:hover {
+  text-decoration: underline;
+}
+
+.out-of-scope {
+  color: var(--vscode-editorWarning-foreground);
+  font-size: 0.9em;
+}
+
+/* Trace (workbench-ui/R5) */
+
+.trace-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 12px;
+}
+
+.trace-toolbar h3 {
+  flex: 1;
+  margin: 0;
+}
+
+.trace-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.trace-header h2 {
+  margin: 8px 0;
+  font-size: 1.15em;
+}
+
+.trace h3 {
+  font-size: 1em;
+  font-weight: 600;
+  margin: 16px 0 6px;
+}
+
+.trace-tasks,
+.trace-commits {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.trace-tasks li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+}
+
+.trace-commits li {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 6px;
+  border-radius: 2px;
+}
+
+.trace-commits li.selected {
+  background: var(--vscode-list-inactiveSelectionBackground);
+}
+
+button.commit {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--vscode-foreground);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.commit .hash {
+  font-family: var(--vscode-editor-font-family);
+  color: var(--vscode-textLink-foreground);
+}
+
+button.commit:hover .subject {
+  text-decoration: underline;
+}
+
+.commit-files {
+  font-size: 0.85em;
+  padding-left: 9ch;
+  overflow-wrap: anywhere;
+}
+
+.commit-diff {
+  margin-top: 16px;
+}
+
+/* Drift (workbench-ui/R6) */
+
+.drift-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 12px;
+}
+
+.drift-summary {
+  flex: 1;
+}
+
+.drift-feature h2 {
+  margin: 16px 0 6px;
+  font-size: 1.1em;
+}
+
+.drift-requirement h3 {
+  margin: 8px 0 4px;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.drift-requirement ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.drift-finding {
+  padding: 6px 8px;
+  margin: 0 0 6px;
+  border-left: 3px solid var(--vscode-editorWarning-foreground);
+  background: var(--vscode-editorWidget-background);
+}
+
+.drift-finding.error {
+  border-left-color: var(--vscode-errorForeground);
+}
+
+.drift-finding.info {
+  border-left-color: var(--vscode-editorInfo-foreground);
+}
+
+.finding-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.finding-line .codicon-warning {
+  color: var(--vscode-editorWarning-foreground);
+}
+
+.finding-line .codicon-error {
+  color: var(--vscode-errorForeground);
+}
+
+.rule {
+  font-family: var(--vscode-editor-font-family);
+  color: var(--vscode-descriptionForeground);
+}
+
+.finding-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+  font-size: 0.9em;
+}
+
+.drift-finding .commit-diff {
+  margin-top: 8px;
+}

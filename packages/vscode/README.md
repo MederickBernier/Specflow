@@ -37,21 +37,36 @@ Specflow never stores API keys; signing in is Claude Code's job.
 
    Problems such as an unknown requirement in a task appear in the **Problems** panel as you save.
 
-5. **Run a task.** In the **Specs** view (Explorer sidebar), press ▶ on a task, or use the **▶ Run** lens above its heading. Confirm, and the run view streams what the agent does. **Cancel** stops it.
+5. **Run a task.** In the **Specs** view (Explorer sidebar), press ▶ on a task, use the **▶ Run** lens above its heading, or press **Run** on its card in the workbench's Board. Confirm, and the run view streams what the agent does. **Cancel** stops it.
 
 6. **Review.** When the run succeeds, the **Run review** view lists the changed files; click one to see its diff against `HEAD`. Then:
    - **Accept and commit** commits exactly those files with a prepared message and spec trailers (`Spec-Feature`, `Spec-Task`, `Spec-Req`), and marks the task `done`;
    - **Discard changes** puts the files back and restores the task's status.
 
+   The workbench's **Review** tab shows the same run with every file's diff inline, the scope warnings and the spec notes, with the same Accept and Discard buttons.
+
    The run view also lists **spec notes**: problems the agent found in your spec, or decisions it made that the spec does not cover. Nothing is changed in `.specs/` for you; you decide.
 
 7. **Trace and drift.** The lens above each requirement shows its tasks, last commit and drift findings; click it to see the commits that implement it. **Specflow: Check drift** flags requirements whose code changed without the spec, or whose spec changed without the code.
+
+## The workbench
+
+**Specflow: Open workbench** (or the dashboard icon in the Specs view title) opens one Specflow tab in the editor, with five tabs:
+
+- **Overview**: every feature with its requirements and tasks counted by status and its share of tasks done; lint problems, drift findings and harness health at the top. Click a feature to see it on the Board.
+- **Board**: tasks in To do, Doing, Done and Blocked columns, marked when they wait on unfinished dependencies. **Run** goes through the usual confirmation; **Open** shows the task's heading. Filter by feature.
+- **Review**: the run under review, with each file's diff against `HEAD` inline (unified or side by side; the choice is remembered), files outside the task's `files:` marked, the agent's spec notes, and **Accept and commit** / **Discard changes**. **Open in VS Code diff** opens a file in the regular diff editor. With no run under review, it shows your uncommitted changes, read only.
+- **Trace**: pick a requirement or task to see its tasks and the commits that implement it; click a commit to see its diff. The **Open in workbench** lens above a requirement, and **Trace in workbench** in the Specs view, open it there.
+- **Drift**: findings grouped by requirement, with **Check drift**, each finding's commit diff, and **Acknowledge**, which writes a `drift-ack: <commit>` line on the requirement after you confirm. Commit that line to share the acknowledgement.
+
+The workbench uses your theme, loads nothing from the network, and works with the keyboard (arrow keys move between tabs). Very large or binary files show a placeholder with a button to open them in VS Code's diff editor.
 
 ## Commands
 
 | Command | What it does |
 | --- | --- |
 | Specflow: Initialize specs | Creates `.specs/` with templates |
+| Specflow: Open workbench | Opens the workbench: overview, board, review, trace and drift |
 | Specflow: Lint | Checks the specs and shows problems |
 | Specflow: Show | Opens a feature, requirement or task |
 | Specflow: Run task | Runs a task through the harness |
@@ -59,6 +74,7 @@ Specflow never stores API keys; signing in is Claude Code's job.
 | Specflow: Accept and commit / Discard changes | Finishes a review |
 | Specflow: Trace | Lists the tasks and commits behind a requirement or task |
 | Specflow: Check drift | Finds code and spec that no longer agree |
+| Specflow: Acknowledge drift | Marks a requirement's drift as reviewed up to a commit (`drift-ack:`) |
 | Specflow: Check harness | Checks that Claude Code is installed and signed in |
 | Specflow: Refresh specs | Reloads the specs |
 

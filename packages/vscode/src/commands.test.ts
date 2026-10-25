@@ -11,16 +11,17 @@ const manifest = JSON.parse(readFileSync(here("../package.json"), "utf8")) as {
   contributes: { commands: { command: string; title: string }[]; menus: { commandPalette: { command: string; when?: string }[] } };
 };
 
-/** CLI commands, read from the CLI's commander setup: `.command("x")`, with `harness` subcommands joined. */
+/**
+ * CLI commands, read from the CLI's commander setup: `program.command("x")`
+ * at the top, and `x.command("y")` as `x y`. `harness` only groups
+ * subcommands, so it is not a command of its own.
+ */
 function cliCommands(): string[] {
   const source = readFileSync(here("../../cli/src/program.ts"), "utf8");
-  const names = [...source.matchAll(/\.command\("([a-z]+)"\)/g)].map((m) => m[1]!);
-  const out: string[] = [];
-  for (let i = 0; i < names.length; i++) {
-    if (names[i] === "harness") out.push(`harness ${names[++i]}`);
-    else out.push(names[i]!);
-  }
-  return out;
+  const top = [...source.matchAll(/program\s*\.command\("([a-z]+)"\)/g)].map((m) => m[1]!);
+  const subs = [...source.matchAll(/^\s*([a-z]+)\s*\.command\("([a-z]+)"\)/gm)].filter((m) => m[1] !== "program").map((m) => `${m[1]} ${m[2]}`);
+  const groups = new Set(["harness"]);
+  return [...top.filter((name) => !groups.has(name)), ...subs];
 }
 
 describe("command palette parity", () => {

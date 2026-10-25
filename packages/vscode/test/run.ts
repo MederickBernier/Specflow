@@ -5,6 +5,7 @@
 //
 // Needs a display; on Linux CI wrap it in xvfb-run.
 
+import { execFileSync } from "node:child_process";
 import { cpSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -31,6 +32,8 @@ cpSync(cleanFixture, withSpecs, { recursive: true });
 cpSync(join(cleanFixture, "src"), join(withoutSpecs, "src"), { recursive: true });
 const withDrift = join(scratch, "drift");
 cpSync(driftFixture, withDrift, { recursive: true });
+// Windows runners set core.autocrlf=true globally; files git restores would then differ from `git show` by their line endings.
+for (const repo of [withSpecs, withDrift]) execFileSync("git", ["config", "core.autocrlf", "false"], { cwd: repo });
 
 try {
   for (const [label, workspace] of [
@@ -43,7 +46,7 @@ try {
       extensionDevelopmentPath,
       extensionTestsPath,
       launchArgs: [workspace, "--disable-extensions", "--disable-workspace-trust", "--skip-welcome", "--skip-release-notes"],
-      extensionTestsEnv: { SPECFLOW_SMOKE: label },
+      extensionTestsEnv: { SPECFLOW_SMOKE: label, ...(process.env.CI && { CI: process.env.CI }) },
     });
   }
 } finally {

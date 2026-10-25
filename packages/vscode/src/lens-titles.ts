@@ -1,5 +1,8 @@
 import { type Finding, fullRef, type Requirement, resolveRef, type SpecTree, type Task, type TraceCommit } from "@specflow/core";
 
+/** The second lens above a requirement heading, opening its trace in the workbench (workbench-ui/R5). */
+export const workbenchLensTitle = "$(dashboard) Open in workbench";
+
 /** The run lens above a task heading (vscode-extension/R4). */
 export function taskLensTitle(task: Task): string {
   return task.status === "done" ? `$(play) Run ${task.id} again` : `$(play) Run ${task.id}`;

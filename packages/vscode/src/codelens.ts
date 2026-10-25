@@ -1,7 +1,7 @@
 import { fullRef, type Git, joinPath, toPosixPath } from "@specflow/core";
 import * as vscode from "vscode";
 import type { Insights } from "./insights.js";
-import { requirementLensTitle, taskLensTitle } from "./lens-titles.js";
+import { requirementLensTitle, taskLensTitle, workbenchLensTitle } from "./lens-titles.js";
 import type { SpecService } from "./spec-service.js";
 
 /** URI scheme showing `git show` of a commit from a trace. */
@@ -49,6 +49,11 @@ export class SpecCodeLens implements vscode.CodeLensProvider, vscode.Disposable 
                 title: requirementLensTitle(tree, requirement, insights?.commits ?? [], insights?.drift),
                 command: "specflow.showTrace",
                 arguments: [fullRef(feature.name, requirement.id)],
+              }),
+              new vscode.CodeLens(line(requirement.location.startLine), {
+                title: workbenchLensTitle,
+                command: "specflow.openWorkbench",
+                arguments: [{ tab: "trace", ref: fullRef(feature.name, requirement.id), root: service.root }],
               }),
             );
           }

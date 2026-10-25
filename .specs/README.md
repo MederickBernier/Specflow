@@ -18,7 +18,7 @@ This project is built spec first, using its own format. Every change starts here
 
 Steering files apply to every feature. Feature folders are scoped to one capability.
 
-## Features (v1)
+## Features
 
 | Folder | Plan phase | Depends on |
 | --- | --- | --- |
@@ -26,6 +26,7 @@ Steering files apply to every feature. Feature folders are scoped to one capabil
 | `task-run` | 2 | core-spec-model |
 | `drift-check` | 3 | core-spec-model, task-run |
 | `vscode-extension` | 4, 5 | all of the above |
+| `workbench-ui` | 6 | vscode-extension |
 
 ## ID rules
 

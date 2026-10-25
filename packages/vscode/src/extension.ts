@@ -4,18 +4,21 @@ import { NodeGit, NodeSpawner, SystemClock } from "@specflow/core/node";
 import * as vscode from "vscode";
 import { basename } from "node:path";
 import { CommitDocuments, commitScheme, SpecCodeLens } from "./codelens.js";
-import { lintCommand, showCommand } from "./commands.js";
+import { ackDriftCommand, lintCommand, showCommand } from "./commands.js";
 import { Diagnostics } from "./diagnostics.js";
 import { SpecExplorer } from "./explorer.js";
 import type { ExplorerNode } from "./explorer-nodes.js";
 import { headScheme, ReviewController } from "./run/review.js";
 import { RunController } from "./run/run-controller.js";
 import { findingsByFile } from "./diagnostics-data.js";
-import { checkHarness } from "./harness-health.js";
+import { checkHarness, lastHarnessCheck, onDidCheckHarness } from "./harness-health.js";
 import { Insights } from "./insights.js";
 import type { ExplorerSource } from "./explorer-nodes.js";
 import { SpecService } from "./spec-service.js";
 import { corePath, VsCodeFileSystem } from "./vscode-fs.js";
+import { type OpenWorkbenchOptions, WorkbenchPanel, workbenchViewType } from "./workbench/panel.js";
+import type { TraceInput, WorkbenchInputs } from "./workbench/state.js";
+import { handleIntent } from "./workbench/actions.js";
 
 /** Context key: true when a workspace folder has specs. Commands other than init are only shown then. */
 export const hasSpecsKey = "specflow.hasSpecs";
@@ -52,6 +55,8 @@ function showDrift(root: string): void {
 /** The config of the first spec root, for harness selection. */
 const firstConfig = () => [...services.values()].find((s) => s.tree)?.tree?.config;
 
+let workbench: WorkbenchPanel | undefined;
+
 const explorer = new SpecExplorer(() =>
   [...services.values()].map((s): ExplorerSource => ({
     root: s.root,
@@ -60,6 +65,64 @@ const explorer = new SpecExplorer(() =>
     ...(s.error && !s.tree && { error: s.error.message }),
   })),
 );
+
+/** Calls `changed` when a file of the run under review is created, changed or deleted on disk. */
+function reviewWatcher(changed: () => void): vscode.Disposable {
+  const watcher = vscode.workspace.createFileSystemWatcher("**/*");
+  const onFile = (uri: vscode.Uri) => {
+    const pending = review.pending;
+    if (pending && pending.recording.files.some((file) => `${pending.tree.root}/${file}` === corePath(uri))) changed();
+  };
+  watcher.onDidCreate(onFile);
+  watcher.onDidChange(onFile);
+  watcher.onDidDelete(onFile);
+  return watcher;
+}
+
+/** What the workbench shows, gathered from the services, insights, runs and review. */
+/** Drift checks in progress, so the workbench can show progress. */
+let driftChecking = 0;
+
+/** The requirement or task the workbench's Trace tab shows. */
+let traceTarget: TraceInput | undefined;
+
+/** Picks what the Trace tab shows; the root defaults to the one with that feature. */
+function selectTrace(ref: string, root?: string): boolean {
+  const feature = ref.slice(0, ref.lastIndexOf("/"));
+  const service = (root && services.get(root)) || [...services.values()].find((s) => s.tree?.features.some((f) => f.name === feature));
+  if (!service) return false;
+  traceTarget = { root: service.root, ref };
+  workbench?.changed();
+  return true;
+}
+
+function workbenchInputs(): WorkbenchInputs {
+  const pending = review.pending;
+  const run = runs.current;
+  const harness = lastHarnessCheck();
+  return {
+    roots: [...services.values()].map((s) => ({
+      root: s.root,
+      name: basename(s.root),
+      ...(s.tree && { tree: s.tree }),
+      ...(s.error && { error: s.error.message }),
+      ...(insights.get(s.root) && { insights: insights.get(s.root)! }),
+    })),
+    ...(harness && { harness }),
+    ...(run && { run: { target: run.target, status: run.state.status } }),
+    ...(traceTarget && services.has(traceTarget.root) && { trace: traceTarget }),
+    ...(driftChecking > 0 && { driftChecking: true }),
+    ...(pending && {
+      review: {
+        root: pending.tree.root,
+        target: `${pending.result.snapshot.feature}/${pending.result.snapshot.task}`,
+        files: review.files(),
+        outOfScope: pending.result.scope.outOfScope,
+        specNotes: pending.result.specNotes,
+      },
+    }),
+  };
+}
 
 /** What `activate` returns; also used by the smoke tests. */
 export type SpecflowApi = {
@@ -70,11 +133,42 @@ export type SpecflowApi = {
   review: ReviewController;
   insights: Insights;
   refreshInsights: (options?: { drift?: boolean }) => Promise<void>;
+  workbench: WorkbenchPanel;
 };
 
 /** Runs when a workspace contains `.specs/`, or when `Initialize specs` is invoked. */
 export async function activate(context: vscode.ExtensionContext): Promise<SpecflowApi> {
+  const panel = new WorkbenchPanel(context.extensionUri, workbenchInputs);
+  workbench = panel;
+  const changed = () => panel.changed();
   context.subscriptions.push(
+    panel,
+    insights.onDidChange(changed),
+    review.onDidChangeTreeData(changed),
+    runs.onDidChange(changed),
+    onDidCheckHarness(changed),
+    panel.onDidRequest(
+      (intent) =>
+        void handleIntent(intent, {
+          git,
+          fs,
+          reviewFiles: () => review.pending?.recording.files ?? [],
+          selectTrace: (root, ref) => void selectTrace(ref, root),
+          send: (message) => panel.send(message),
+        }),
+    ),
+    // workbench-ui/R4: editing a file under review updates its diff in the workbench.
+    reviewWatcher(() => panel.changed()),
+    vscode.window.registerWebviewPanelSerializer(workbenchViewType, panel),
+    vscode.commands.registerCommand("specflow.openWorkbench", (options?: OpenWorkbenchOptions) => {
+      // workbench-ui/R5: the requirement lens opens the Trace tab on its requirement.
+      if (options?.ref && selectTrace(options.ref, options.root)) panel.open({ tab: "trace" });
+      else panel.open(options);
+    }),
+    vscode.commands.registerCommand("specflow.traceInWorkbench", (node?: ExplorerNode) => {
+      if (!node?.ref) return;
+      if (selectTrace(`${node.ref.feature}/${node.ref.id}`, node.ref.root)) panel.open({ tab: "trace" });
+    }),
     vscode.commands.registerCommand("specflow.init", () => initialize()),
     vscode.commands.registerCommand("specflow.lint", () => lintCommand([...services.values()], diagnostics)),
     vscode.commands.registerCommand("specflow.show", (target?: string) => showCommand([...services.values()], target)),
@@ -100,8 +194,24 @@ export async function activate(context: vscode.ExtensionContext): Promise<Specfl
       lenses.refresh();
       showDrift(root);
     }),
+    vscode.commands.registerCommand("specflow.ackDrift", async (ref?: string, commit?: string, options?: { confirm?: boolean }) => {
+      const result = await ackDriftCommand([...services.values()], { fs, git, drift: (root) => insights.get(root)?.drift }, ref, commit, options);
+      // The spec reload updates lint and the tree; drift findings are recomputed if they were checked.
+      if (result?.ok) {
+        const checked = [...services.values()].some((s) => insights.get(s.root)?.drift !== undefined);
+        await refreshInsights({ drift: checked || driftOnSave() });
+      }
+      return result;
+    }),
     vscode.commands.registerCommand("specflow.checkDrift", async () => {
-      await refreshInsights({ drift: true });
+      driftChecking++;
+      workbench?.changed();
+      try {
+        await refreshInsights({ drift: true });
+      } finally {
+        driftChecking--;
+        workbench?.changed();
+      }
       const findings = [...services.values()].flatMap((s) => insights.get(s.root)?.drift ?? []);
       void vscode.window.showInformationMessage(
         findings.length === 0 ? "Specflow: no drift found." : `Specflow: ${findings.length} drift finding${findings.length === 1 ? "" : "s"}, shown in Problems.`,
@@ -129,7 +239,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Specfl
   await refreshContext();
   // vscode-extension/R8: tell the user early if runs cannot work. Not awaited, so activation stays fast.
   if (services.size > 0) void checkHarness(registry, firstConfig(), { quiet: true });
-  return { services: () => [...services.values()], explorer, registry, runs, review, insights, refreshInsights };
+  return { services: () => [...services.values()], explorer, registry, runs, review, insights, refreshInsights, workbench: panel };
 }
 
 export function deactivate(): void {}
@@ -161,6 +271,7 @@ async function refreshContext(): Promise<void> {
     const service = new SpecService(root, fs);
     services.set(root, service);
     service.onDidChange(() => {
+      workbench?.changed();
       explorer.refresh();
       lenses.refresh();
       diagnostics.updateLint(service);
@@ -171,6 +282,7 @@ async function refreshContext(): Promise<void> {
     void insights.refresh(service, { drift: driftOnSave() });
   }
   explorer.refresh();
+  workbench?.changed();
   await vscode.commands.executeCommand("setContext", hasSpecsKey, roots.length > 0);
 }
 

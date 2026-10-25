@@ -1,0 +1,84 @@
+diff --git a/blob.bin b/blob.bin
+new file mode 100644
+index 0000000..8352675
+Binary files /dev/null and b/blob.bin differ
+diff --git a/gone.txt b/gone.txt
+new file mode 100644
+index 0000000..2fa992c
+--- /dev/null
++++ b/gone.txt
+@@ -0,0 +1 @@
++keep
+diff --git a/multi.txt b/multi.txt
+new file mode 100644
+index 0000000..e031777
+--- /dev/null
++++ b/multi.txt
+@@ -0,0 +1,12 @@
++one
++two
++three
++four
++five
++six
++seven
++eight
++nine
++ten
++eleven
++twelve
+diff --git a/nonl.txt b/nonl.txt
+new file mode 100644
+index 0000000..e32b0df
+--- /dev/null
++++ b/nonl.txt
+@@ -0,0 +1 @@
++end
+\ No newline at end of file
+diff --git a/old-name.txt b/old-name.txt
+new file mode 100644
+index 0000000..0fdf397
+--- /dev/null
++++ b/old-name.txt
+@@ -0,0 +1,6 @@
++a
++b
++c
++d
++e
++f
+diff --git a/pure.txt b/pure.txt
+new file mode 100644
+index 0000000..1275430
+--- /dev/null
++++ b/pure.txt
+@@ -0,0 +1 @@
++same
+diff --git a/script.sh b/script.sh
+new file mode 100644
+index 0000000..f5bdd21
+--- /dev/null
++++ b/script.sh
+@@ -0,0 +1 @@
++run
+diff --git "a/tab\there.txt" "b/tab\there.txt"
+new file mode 100644
+index 0000000..b680253
+--- /dev/null
++++ "b/tab\there.txt"
+@@ -0,0 +1 @@
++z
+diff --git a/with space.txt b/with space.txt
+new file mode 100644
+index 0000000..587be6b
+--- /dev/null
++++ b/with space.txt	
+@@ -0,0 +1 @@
++x
+diff --git "a/\303\251.txt" "b/\303\251.txt"
+new file mode 100644
+index 0000000..bca70f3
+--- /dev/null
++++ "b/\303\251.txt"
+@@ -0,0 +1 @@
++q

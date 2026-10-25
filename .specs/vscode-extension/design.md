@@ -2,7 +2,7 @@
 
 ## Overview
 
-The extension imports `@specflow/core` and the adapters directly, in the extension host. No webview in v1 except the run output view.
+The extension imports `@specflow/core` and the adapters directly, in the extension host. Webviews are the run output view and the workbench (see `workbench-ui`).
 
 ```
 extension.ts
@@ -86,9 +86,9 @@ The table lives in `commands.ts` (`cliParity`); a unit test reads the CLI's comm
 
 ## Packaging
 
-esbuild bundles to a single `dist/extension.js` (minified for packaging, about 720 KB). `pnpm --filter specflow-vscode package` builds `specflow-vscode.vsix` (about 190 KB) with only the bundle, `package.json`, README, changelog and license (`.vscodeignore`). The smoke tests can run against an unpacked `.vsix` with `SPECFLOW_EXTENSION_PATH`. `vsce` and `ovsx` publish from CI on a `v*` tag (`release.yml`) with the `VSCE_PAT` and `OVSX_PAT` secrets, after checking the tag matches the extension version. License: MIT.
+esbuild bundles to a single `dist/extension.js` (minified for packaging, about 720 KB). `pnpm --filter specflow-vscode package` builds `specflow-vscode.vsix` (about 290 KB) with only the bundles (extension, workbench webview, codicon font), `package.json`, README, changelog and license (`.vscodeignore`). The smoke tests can run against an unpacked `.vsix` with `SPECFLOW_EXTENSION_PATH`. `vsce` and `ovsx` publish from CI on a `v*` tag (`release.yml`) with the `VSCE_PAT` and `OVSX_PAT` secrets, after checking the tag matches the extension version. License: MIT.
 
 ## Alternatives considered
 
 - **Call the CLI as a subprocess instead of importing core:** cleaner isolation, slower and harder to stream. Kept as the model for the JetBrains shell, not used here.
-- **A full webview UI (React) for the explorer:** nicer looking, but native tree views are faster and theme correctly. Revisit for post-v1 visuals.
+- **A full webview UI (React) for the explorer:** nicer looking, but native tree views are faster and theme correctly. The explorer stays native; the richer views are the `workbench-ui` feature.

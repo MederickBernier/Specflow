@@ -2,6 +2,20 @@ import { AdapterRegistry, type Config, defaultConfig, type HarnessAdapter, type 
 import * as vscode from "vscode";
 import { harnessMessage, installButton } from "./harness-message.js";
 
+/** What the last harness check found, for views that show harness health. */
+export type HarnessReport = { ready: boolean; harness?: string; version?: string; warnings?: string[]; message?: string; installUrl?: string };
+
+let lastReport: HarnessReport | undefined;
+const checked = new vscode.EventEmitter<HarnessReport>();
+
+/** Fires after every harness check. */
+export const onDidCheckHarness = checked.event;
+
+/** The result of the last harness check, if one ran. */
+export function lastHarnessCheck(): HarnessReport | undefined {
+  return lastReport;
+}
+
 /** `specflow.harness` overrides `harness.default` for this machine. */
 export function harnessOverride(): string {
   return vscode.workspace.getConfiguration("specflow").get<string>("harness", "");
@@ -41,8 +55,17 @@ export async function checkHarness(
   } else if (message.level === "info") {
     void vscode.window.showInformationMessage(message.text);
   }
+  const ready = adapter.ok && check!.ok;
+  lastReport = {
+    ready,
+    ...(adapter.ok && { harness: adapter.value.name }),
+    ...(check?.ok && { version: check.value.version, warnings: check.value.warnings }),
+    ...(!ready && message.level === "warning" && { message: message.text }),
+    ...(message.level === "warning" && message.installUrl && { installUrl: message.installUrl }),
+  };
+  checked.fire(lastReport);
   return {
-    ready: adapter.ok && check!.ok,
+    ready,
     ...(check && { check }),
     ...(adapter.ok && { harness: adapter.value.name }),
   };
