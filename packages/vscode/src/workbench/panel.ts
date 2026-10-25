@@ -34,6 +34,8 @@ export class WorkbenchPanel implements vscode.Disposable, vscode.WebviewPanelSer
   readonly onDidRequest = this.#requests.event;
   #panel: vscode.WebviewPanel | undefined;
   #tab: WorkbenchTab | undefined;
+  // A tab asked for while the page may be reloading; sent again on `ready` until the page shows it.
+  #requestedTab: WorkbenchTab | undefined;
   #state: WorkbenchState | undefined;
   #rendered: number | undefined;
   #revision = 0;
@@ -73,7 +75,11 @@ export class WorkbenchPanel implements vscode.Disposable, vscode.WebviewPanelSer
     const tab = isWorkbenchTab(options.tab) ? options.tab : undefined;
     if (this.#panel) {
       this.#panel.reveal();
-      if (tab) this.send({ type: "show", tab });
+      if (tab && tab !== this.#tab) {
+        // A hidden page is torn down and reloads on reveal, missing messages sent meanwhile.
+        this.#requestedTab = tab;
+        this.send({ type: "show", tab });
+      }
       return this.#panel;
     }
     const panel = vscode.window.createWebviewPanel(workbenchViewType, "Specflow", vscode.ViewColumn.Active, this.#options());
@@ -99,9 +105,11 @@ export class WorkbenchPanel implements vscode.Disposable, vscode.WebviewPanelSer
       case "ready":
         this.#post.dispose();
         this.#postState();
+        if (this.#requestedTab) this.send({ type: "show", tab: this.#requestedTab });
         break;
       case "tab":
         this.#tab = message.tab;
+        if (message.tab === this.#requestedTab) this.#requestedTab = undefined;
         break;
       case "rendered":
         this.#rendered = message.revision;
@@ -136,6 +144,7 @@ export class WorkbenchPanel implements vscode.Disposable, vscode.WebviewPanelSer
   #attach(panel: vscode.WebviewPanel, tab?: WorkbenchTab): void {
     this.#panel = panel;
     this.#tab = undefined;
+    this.#requestedTab = undefined;
     this.#rendered = undefined;
     // Validation needs a state before the page's first message.
     this.#state = buildWorkbenchState(this.#inputs(), ++this.#revision);

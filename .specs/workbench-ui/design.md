@@ -37,7 +37,7 @@ packages/vscode/webview/
 ## Panel and security
 
 - `Specflow: Open workbench` (`specflow.openWorkbench`, optional `{ tab, feature, ref }`) creates the panel once and reveals it afterwards; a button in the Specs view title runs it. `retainContextWhenHidden` is off; the webview saves `{ tab, filter, diffLayout }` with `vscode.setState`, and a `WebviewPanelSerializer` restores the panel after a reload.
-- The page posts `{ type: "tab", tab }` whenever its tab changes (smoke tests use this to know the bundle ran under the CSP), and the host posts `{ type: "show", tab }` to switch tabs. The tab bar follows the ARIA tabs pattern: arrow keys, Home and End, one tab in the tab order.
+- The page posts `{ type: "tab", tab }` whenever its tab changes (smoke tests use this to know the bundle ran under the CSP), and the host posts `{ type: "show", tab }` to switch tabs. Revealing a hidden panel reloads its page, which misses messages sent meanwhile, so the host keeps a requested tab and sends it again on `ready` until the page reports showing it. The tab bar follows the ARIA tabs pattern: arrow keys, Home and End, one tab in the tab order.
 - CSP: `default-src 'none'; script-src 'nonce-…'; style-src ${cspSource}; font-src ${cspSource}; img-src ${cspSource} data:`. `localResourceRoots` is `dist/` only.
 - Colors come from VS Code's `--vscode-*` CSS variables; no theme of our own.
 - Preact escapes all text. Diff lines, commit subjects and spec text are rendered as text nodes; `dangerouslySetInnerHTML` is not used.
@@ -83,6 +83,7 @@ packages/vscode/webview/
 - core: `parseUnifiedDiff` against recorded patches in `fixtures/diffs/` (rename, binary, no newline, CRLF, quoted path, mode change); `readWorkingDiff` and `readCommitDiff` on a fixture repo; `setMetadataLine` and `ackDrift` unit tests.
 - extension host: `buildWorkbenchState` and the protocol parser are unit tested with Vitest, without VS Code.
 - webview: components tested with Vitest in a `happy-dom` environment and `@testing-library/preact`: tab switching, board columns and waiting badges, diff rendering in both layouts, placeholders, keyboard focus order.
+- smoke latency budgets (R1's 1 second) are asserted on developer machines; with `CI` set the tests only check that the change arrives and log the time, since shared runners deliver file events late. The smoke workspaces set `core.autocrlf=false`, as Windows runners turn it on globally.
 - smoke (one test per tab, plus a freshly initialized workspace and the packaged `.vsix` through `SPECFLOW_EXTENSION_PATH`): the command opens one panel and reveals it on the second call; `activate` exposes `workbench.state` and `workbench.receive(message)` so smoke tests can assert on the posted state and drive intents (run from the board with the replay adapter, accept, ack) without reading the webview's DOM.
 
 ## Alternatives considered
