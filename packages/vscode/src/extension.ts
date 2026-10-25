@@ -1,8 +1,11 @@
-import { findRoot, type InitError, type InitResult, initSpecs, type Result } from "@specflow/core";
+import { ClaudeCodeAdapter } from "@specflow/adapter-claude-code";
+import { AdapterRegistry, findRoot, type InitError, type InitResult, initSpecs, type Result } from "@specflow/core";
+import { NodeGit, NodeSpawner, SystemClock } from "@specflow/core/node";
 import * as vscode from "vscode";
 import { basename } from "node:path";
 import { Diagnostics } from "./diagnostics.js";
 import { SpecExplorer } from "./explorer.js";
+import { checkHarness } from "./harness-health.js";
 import type { ExplorerSource } from "./explorer-nodes.js";
 import { SpecService } from "./spec-service.js";
 import { corePath, VsCodeFileSystem } from "./vscode-fs.js";
@@ -17,6 +20,13 @@ const services = new Map<string, SpecService>();
 
 const diagnostics = new Diagnostics();
 
+const git = new NodeGit();
+const clock = new SystemClock();
+const registry = new AdapterRegistry([new ClaudeCodeAdapter({ spawner: new NodeSpawner(), git, clock })]);
+
+/** The config of the first spec root, for harness selection. */
+const firstConfig = () => [...services.values()].find((s) => s.tree)?.tree?.config;
+
 const explorer = new SpecExplorer(() =>
   [...services.values()].map((s): ExplorerSource => ({
     root: s.root,
@@ -27,12 +37,13 @@ const explorer = new SpecExplorer(() =>
 );
 
 /** What `activate` returns; also used by the smoke tests. */
-export type SpecflowApi = { services: () => SpecService[]; explorer: SpecExplorer };
+export type SpecflowApi = { services: () => SpecService[]; explorer: SpecExplorer; registry: AdapterRegistry };
 
 /** Runs when a workspace contains `.specs/`, or when `Initialize specs` is invoked. */
 export async function activate(context: vscode.ExtensionContext): Promise<SpecflowApi> {
   context.subscriptions.push(
     vscode.commands.registerCommand("specflow.init", () => initialize()),
+    vscode.commands.registerCommand("specflow.checkHarness", () => checkHarness(registry, firstConfig(), { quiet: false })),
     vscode.commands.registerCommand("specflow.refresh", async () => {
       await Promise.all([...services.values()].map((s) => s.load()));
       explorer.refresh();
@@ -45,7 +56,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<Specfl
     { dispose: () => [...services.values()].forEach((s) => s.dispose()) },
   );
   await refreshContext();
-  return { services: () => [...services.values()], explorer };
+  // vscode-extension/R8: tell the user early if runs cannot work. Not awaited, so activation stays fast.
+  if (services.size > 0) void checkHarness(registry, firstConfig(), { quiet: true });
+  return { services: () => [...services.values()], explorer, registry };
 }
 
 export function deactivate(): void {}

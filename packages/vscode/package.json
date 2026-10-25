@@ -28,6 +28,11 @@
         "title": "Refresh specs",
         "category": "Specflow",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "specflow.checkHarness",
+        "title": "Check harness",
+        "category": "Specflow"
       }
     ],
     "menus": {
@@ -38,6 +43,10 @@
         },
         {
           "command": "specflow.refresh",
+          "when": "specflow.hasSpecs"
+        },
+        {
+          "command": "specflow.checkHarness",
           "when": "specflow.hasSpecs"
         }
       ],
@@ -57,6 +66,16 @@
           "when": "specflow.hasSpecs"
         }
       ]
+    },
+    "configuration": {
+      "title": "Specflow",
+      "properties": {
+        "specflow.harness": {
+          "type": "string",
+          "default": "",
+          "description": "Agent harness to use on this machine, overriding harness.default in .specs/config.yml. Leave empty to use the config."
+        }
+      }
     }
   },
   "scripts": {

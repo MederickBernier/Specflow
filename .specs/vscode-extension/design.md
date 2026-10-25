@@ -36,6 +36,10 @@ A `Specs` view in the Explorer sidebar (`specflow.specs`, shown when `specflow.h
 
 Two `DiagnosticCollection`s, `specflow-lint` and `specflow-drift`, so each can be cleared independently. `Finding.severity` maps directly to `DiagnosticSeverity`; the rule ID is the diagnostic `code` and the source is `specflow`. Lint diagnostics are replaced on every `SpecService` change; the files each root reported are remembered so fixed problems disappear. A tree that fails to load is shown as one error on `.specs/config.yml`.
 
+## Harness health
+
+`checkHarness` resolves the adapter (`specflow.harness` overrides `harness.default`) and runs its `check()`. `harnessMessage` turns the result into a warning with an `Open install docs` button (opening `installUrl`), information for version warnings, or nothing. It runs in the background on activation (quiet on success) and from `Specflow: Check harness`, which returns the result. Notifications are never awaited, since their promise only settles when the user acts.
+
 ## Run flow
 
 1. Command `specflow.runTask(feature, taskId)`.

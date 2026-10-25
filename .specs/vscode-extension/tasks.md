@@ -29,8 +29,8 @@ depends: T2, core-spec-model/T8
 Broken fixture shows its findings in Problems; fixing and saving clears them.
 
 ## T5: Harness health check [R8]
-status: todo
-files: packages/vscode/src/harness-health.ts
+status: done
+files: packages/vscode/src/harness-health.ts, packages/vscode/src/harness-message.ts
 depends: T1, task-run/T6
 
 Missing binary shows the message and install button.

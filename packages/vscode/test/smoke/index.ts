@@ -98,6 +98,21 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
     await eventually(() => specflow().length === 0, "diagnostic cleared", 3000);
   });
 
+  // vscode-extension/R8: the check command reports the configured harness.
+  test("checks the harness, honoring specflow.harness", async () => {
+    const settings = vscode.workspace.getConfiguration("specflow");
+    await settings.update("harness", "aider", vscode.ConfigurationTarget.Workspace);
+    try {
+      const result = (await vscode.commands.executeCommand("specflow.checkHarness")) as { ready: boolean; harness?: string };
+      assert.deepEqual(result, { ready: false });
+    } finally {
+      await settings.update("harness", undefined, vscode.ConfigurationTarget.Workspace);
+    }
+    const result = (await vscode.commands.executeCommand("specflow.checkHarness")) as { harness?: string; check?: { ok: boolean } };
+    assert.equal(result.harness, "claude-code");
+    assert.equal(typeof result.check?.ok, "boolean");
+  });
+
   test("refuses to initialize over existing specs", async () => {
     await vscode.commands.executeCommand("specflow.init");
     const product = await vscode.workspace.findFiles(".specs/product.md");
