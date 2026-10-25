@@ -50,8 +50,8 @@ depends: T6, task-run/T7
 Changed files open in the built-in diff editor; accept commits with trailers; discard restores after confirmation and resets the task status.
 
 ## T8: Task and requirement CodeLens [R4, R7]
-status: todo
-files: packages/vscode/src/codelens.ts
+status: done
+files: packages/vscode/src/codelens.ts, packages/vscode/src/lens-titles.ts, packages/vscode/src/insights.ts
 depends: T6, task-run/T9, drift-check/T7
 
 Run lens on tasks; summary lens on requirements with tasks, last commit and drift count; click opens the trace.

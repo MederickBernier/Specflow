@@ -61,6 +61,11 @@
         "command": "specflow.openDiff",
         "title": "Open diff",
         "category": "Specflow"
+      },
+      {
+        "command": "specflow.showTrace",
+        "title": "Trace",
+        "category": "Specflow"
       }
     ],
     "menus": {
@@ -96,6 +101,10 @@
         {
           "command": "specflow.openDiff",
           "when": "false"
+        },
+        {
+          "command": "specflow.showTrace",
+          "when": "specflow.hasSpecs"
         }
       ],
       "view/title": [
@@ -125,6 +134,11 @@
           "command": "specflow.runTask",
           "when": "view == specflow.specs && viewItem == task",
           "group": "1_run"
+        },
+        {
+          "command": "specflow.showTrace",
+          "when": "view == specflow.specs && viewItem =~ /^(requirement|task)$/",
+          "group": "2_trace"
         }
       ]
     },

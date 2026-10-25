@@ -1,14 +1,16 @@
 import { ClaudeCodeAdapter } from "@specflow/adapter-claude-code";
-import { AdapterRegistry, findRoot, type InitError, type InitResult, initSpecs, type Result } from "@specflow/core";
+import { AdapterRegistry, findRoot, type InitError, type InitResult, initSpecs, type Result, trace } from "@specflow/core";
 import { NodeGit, NodeSpawner, SystemClock } from "@specflow/core/node";
 import * as vscode from "vscode";
 import { basename } from "node:path";
+import { CommitDocuments, commitScheme, SpecCodeLens } from "./codelens.js";
 import { Diagnostics } from "./diagnostics.js";
 import { SpecExplorer } from "./explorer.js";
 import type { ExplorerNode } from "./explorer-nodes.js";
 import { headScheme, ReviewController } from "./run/review.js";
 import { RunController } from "./run/run-controller.js";
 import { checkHarness } from "./harness-health.js";
+import { Insights } from "./insights.js";
 import type { ExplorerSource } from "./explorer-nodes.js";
 import { SpecService } from "./spec-service.js";
 import { corePath, VsCodeFileSystem } from "./vscode-fs.js";
@@ -29,6 +31,13 @@ const registry = new AdapterRegistry([new ClaudeCodeAdapter({ spawner: new NodeS
 
 const runs = new RunController({ fs, git, registry, clock });
 const review = new ReviewController({ git, fs });
+const insights = new Insights(git);
+const lenses = new SpecCodeLens(() => [...services.values()], insights);
+
+/** Recomputes trace and drift data for every root, then lenses. */
+async function refreshInsights(): Promise<void> {
+  await Promise.all([...services.values()].map((s) => insights.refresh(s)));
+}
 
 /** The config of the first spec root, for harness selection. */
 const firstConfig = () => [...services.values()].find((s) => s.tree)?.tree?.config;
@@ -49,6 +58,8 @@ export type SpecflowApi = {
   registry: AdapterRegistry;
   runs: RunController;
   review: ReviewController;
+  insights: Insights;
+  refreshInsights: () => Promise<void>;
 };
 
 /** Runs when a workspace contains `.specs/`, or when `Initialize specs` is invoked. */
@@ -59,9 +70,23 @@ export async function activate(context: vscode.ExtensionContext): Promise<Specfl
     vscode.commands.registerCommand("specflow.runTask", (node?: ExplorerNode | string, task?: string) => runTaskCommand(node, task)),
     vscode.commands.registerCommand("specflow.cancelRun", () => runs.cancel()),
     vscode.commands.registerCommand("specflow.openDiff", (file: string) => review.openDiff(file)),
-    vscode.commands.registerCommand("specflow.acceptRun", () => review.accept()),
-    vscode.commands.registerCommand("specflow.discardRun", (options?: { confirm?: boolean }) => review.discard(options)),
+    vscode.commands.registerCommand("specflow.acceptRun", async () => {
+      const commit = await review.accept();
+      await refreshInsights();
+      return commit;
+    }),
+    vscode.commands.registerCommand("specflow.discardRun", async (options?: { confirm?: boolean }) => {
+      const discarded = await review.discard(options);
+      await refreshInsights();
+      return discarded;
+    }),
     vscode.window.registerTreeDataProvider("specflow.review", review),
+    vscode.languages.registerCodeLensProvider({ scheme: "file", pattern: "**/*.md" }, lenses),
+    vscode.workspace.registerTextDocumentContentProvider(commitScheme, new CommitDocuments(git)),
+    vscode.commands.registerCommand("specflow.showTrace", (target?: string | ExplorerNode, options?: { show?: boolean }) => showTrace(target, options)),
+    insights.onDidChange(() => lenses.refresh()),
+    insights,
+    lenses,
     vscode.workspace.registerTextDocumentContentProvider(headScheme, review),
     runs,
     review,
@@ -69,6 +94,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Specfl
       await Promise.all([...services.values()].map((s) => s.load()));
       explorer.refresh();
       for (const service of services.values()) diagnostics.updateLint(service);
+      lenses.refresh();
+      await refreshInsights();
     }),
     vscode.window.registerTreeDataProvider("specflow.specs", explorer),
     explorer,
@@ -79,7 +106,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Specfl
   await refreshContext();
   // vscode-extension/R8: tell the user early if runs cannot work. Not awaited, so activation stays fast.
   if (services.size > 0) void checkHarness(registry, firstConfig(), { quiet: true });
-  return { services: () => [...services.values()], explorer, registry, runs, review };
+  return { services: () => [...services.values()], explorer, registry, runs, review, insights, refreshInsights };
 }
 
 export function deactivate(): void {}
@@ -103,6 +130,7 @@ async function refreshContext(): Promise<void> {
       service.dispose();
       services.delete(root);
       diagnostics.clear(root);
+      insights.forget(root);
     }
   }
   for (const root of roots) {
@@ -111,10 +139,13 @@ async function refreshContext(): Promise<void> {
     services.set(root, service);
     service.onDidChange(() => {
       explorer.refresh();
+      lenses.refresh();
       diagnostics.updateLint(service);
+      void insights.refresh(service);
     });
     await service.start();
     diagnostics.updateLint(service);
+    void insights.refresh(service);
   }
   explorer.refresh();
   await vscode.commands.executeCommand("setContext", hasSpecsKey, roots.length > 0);
@@ -186,4 +217,47 @@ async function runTaskCommand(node?: ExplorerNode | string, taskId?: string) {
   const result = await runs.run(service.tree, target.feature, target.id);
   if (result?.recording?.mode === "staged") await review.start(service.tree, result);
   return result;
+}
+
+/**
+ * `specflow.showTrace`: the tasks and commits behind a requirement or task
+ * (vscode-extension/R7), in a quick pick; picking a commit opens it. With
+ * `{ show: false }` it only returns the items, for tests.
+ */
+async function showTrace(target?: string | ExplorerNode, options: { show?: boolean } = {}) {
+  let ref = typeof target === "string" ? target : target?.ref ? `${target.ref.feature}/${target.ref.id}` : undefined;
+  ref ??= await vscode.window.showInputBox({ prompt: "Feature, or feature/ID such as auth/R3" });
+  if (!ref) return undefined;
+  const feature = ref.split("/")[0];
+  const service = [...services.values()].find((s) => s.tree?.features.some((f) => f.name === feature));
+  if (!service?.tree) {
+    void vscode.window.showErrorMessage(`Specflow: no feature ${feature}`);
+    return undefined;
+  }
+  if (!insights.get(service.root)) await insights.refresh(service);
+  const result = trace(service.tree, insights.get(service.root)?.commits ?? [], ref);
+  if (!result.ok) {
+    void vscode.window.showErrorMessage(`Specflow: ${result.error.message}`);
+    return undefined;
+  }
+
+  type Item = vscode.QuickPickItem & { hash?: string };
+  const items: Item[] = [];
+  const traced = result.value;
+  const tasks = traced.kind === "requirement" ? traced.trace.tasks : traced.kind === "task" ? [traced.trace] : traced.trace.tasks;
+  const commits = traced.kind === "feature" ? traced.trace.tasks.flatMap((t) => t.commits) : traced.trace.commits;
+  items.push({ label: "Tasks", kind: vscode.QuickPickItemKind.Separator });
+  for (const t of tasks) items.push({ label: `${t.feature}/${t.id}`, description: t.title, detail: t.status });
+  items.push({ label: "Commits", kind: vscode.QuickPickItemKind.Separator });
+  for (const c of commits) {
+    items.push({ label: c.subject, description: `${c.hash.slice(0, 7)} · ${c.date.slice(0, 10)}`, detail: c.files.map((f) => f.path).join(", "), hash: c.hash });
+  }
+  if (commits.length === 0) items.push({ label: "No commits reference it yet" });
+  if (options.show === false) return items;
+
+  const picked = await vscode.window.showQuickPick(items, { placeHolder: `Trace of ${ref}` });
+  if (picked?.hash) {
+    await vscode.window.showTextDocument(vscode.Uri.from({ scheme: commitScheme, path: service.root, query: picked.hash }));
+  }
+  return items;
 }

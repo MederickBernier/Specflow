@@ -55,6 +55,12 @@ A small webview, no framework: plain HTML and a message handler. Events are rend
 
 `run-view-model.ts` reduces events to a view state and renders it to escaped HTML without the VS Code API, so both are unit tested; the extension posts the rendered body and the page swaps it in. The page has a strict CSP with a nonce for its one script and style. After the run, the outcome (recording, scope warnings, spec notes) is shown under the events.
 
+## CodeLens and trace
+
+- Task headings in `tasks.md` get `$(play) Run T3` (or `Run T3 again` when done), calling `specflow.runTask`.
+- Requirement headings in `requirements.md` get `N tasks · last commit YYYY-MM-DD · M drift findings`, calling `specflow.showTrace`, which lists the tasks and commits in a quick pick; picking a commit opens `git show --stat` through a `specflow-commit:` document.
+- Commit and drift data come from `Insights`, a per-root cache of `readTraceCommits` and the rule-based `checkDrift`, refreshed on spec changes, after accept or discard, and on `Specflow: Refresh specs`. CodeLens requests only read the cache, so they never run git.
+
 ## Settings
 
 | Setting | Default | Purpose |

@@ -252,6 +252,30 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
     assert.equal(await gitIn("diff", "--cached", "--name-only"), "");
   });
 
+  // vscode-extension/R4, R7: lenses on task and requirement headings; the trace opens from them.
+  test("shows run and summary lenses, and the trace behind a requirement", async () => {
+    const api = extension().exports as { refreshInsights: () => Promise<void> };
+    await api.refreshInsights();
+    const root = vscode.workspace.workspaceFolders![0]!.uri;
+    // executeCodeLensProvider only works on documents that are already open.
+    const lensesOf = async (file: string) =>
+      ((await vscode.commands.executeCommand("vscode.executeCodeLensProvider", (await vscode.workspace.openTextDocument(vscode.Uri.joinPath(root, file))).uri)) as vscode.CodeLens[])
+        .filter((l) => l.command?.command.startsWith("specflow."))
+        .map((l) => [l.range.start.line, l.command!.title, l.command!.command, l.command!.arguments]);
+
+    const tasks = await lensesOf(".specs/accounts/tasks.md");
+    assert.deepEqual(tasks[2], [15, "$(play) Run T3 again", "specflow.runTask", ["accounts", "T3"]]);
+
+    const requirements = await lensesOf(".specs/accounts/requirements.md");
+    assert.deepEqual(requirements[1]?.[0], 20);
+    assert.match(String(requirements[1]?.[1]), /^1 task · last commit \d{4}-\d{2}-\d{2} · (no drift|\d+ drift findings?)$/);
+    assert.deepEqual(requirements[1]?.slice(2), ["specflow.showTrace", ["accounts/R2"]]);
+
+    const items = (await vscode.commands.executeCommand("specflow.showTrace", "accounts/R2", { show: false })) as vscode.QuickPickItem[];
+    assert.deepEqual(items.map((i) => i.label).slice(0, 3), ["Tasks", "accounts/T3", "Commits"]);
+    assert.equal(items[3]?.label, "feat(accounts): Add lockout counter");
+  });
+
   test("refuses to initialize over existing specs", async () => {
     await vscode.commands.executeCommand("specflow.init");
     const product = await vscode.workspace.findFiles(".specs/product.md");
@@ -302,6 +326,7 @@ export async function run(): Promise<void> {
       console.log(`  ok   ${name}`);
     } catch (error) {
       console.log(`  FAIL ${name}`);
+      console.log(String((error as Error).stack).split("\n").slice(0, 8).join("\n"));
       throw error;
     }
   }
