@@ -62,3 +62,6 @@ export type { FeatureTrace, RequirementTrace, TaskTrace, Trace, TracedTask, Trac
 export { trace } from "./trace/trace.js";
 export type { SplitReply } from "./run/spec-notes.js";
 export { commitBody, extractSpecNotes } from "./run/spec-notes.js";
+export { matchesGlob } from "./glob.js";
+export type { ScopeReport } from "./run/scope.js";
+export { checkScope } from "./run/scope.js";

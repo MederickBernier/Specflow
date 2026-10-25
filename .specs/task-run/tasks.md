@@ -99,7 +99,7 @@ depends: T7
 `extractSpecNotes` handles headings, bold, inline first notes and continuation lines; the recorder's body is the first paragraph of the summary without notes.
 
 ## T15: Scope check [R11]
-status: todo
+status: done
 files: packages/core/src/run/scope.ts, packages/core/src/glob.ts
 depends: T5
 
