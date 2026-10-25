@@ -33,12 +33,18 @@ Rules: exactly one `started` first, exactly one `finished` last. Unknown harness
 ```ts
 interface HarnessAdapter {
   readonly name: string;
-  check(): Promise<Result<{ version: string }>>;  // installed, logged in
+  check(): Promise<Result<HarnessCheck, HarnessCheckError>>;  // installed, logged in
   run(input: RunInput, signal: AbortSignal): AsyncIterable<RunEvent>;
 }
 
 type RunInput = { cwd: string; prompt: string; extraArgs: string[] };
+type HarnessCheck = { version: string; warnings: string[] };   // e.g. version outside the tested range
+type HarnessCheckError = { kind: "not-installed" | "not-authenticated" | "failed"; message: string; installUrl?: string };
 ```
+
+`AdapterRegistry` holds adapters by name; `resolve(config, override?)` picks `override` (from `--harness` or the editor setting) or `harness.default`, and an unknown name returns `{ kind: "unknown-adapter", known: [...] }`. Registering a name twice throws.
+
+`parseRunEvent` validates events read from files or processes against a strict schema, and `eventSequenceProblems` checks the started-first, finished-last rule; adapter contract tests use both.
 
 ## I/O interfaces
 

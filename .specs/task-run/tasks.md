@@ -8,7 +8,7 @@ depends: core-spec-model/T1
 Run Claude Code headless on two toy tasks (one success, one failure), save the raw streams as fixtures and note the flags and event fields used.
 
 ## T2: Define the event model and adapter interface [R1, R2]
-status: todo
+status: done
 files: packages/core/src/run/events.ts, packages/core/src/run/adapter.ts
 depends: core-spec-model/T3
 

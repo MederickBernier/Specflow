@@ -34,3 +34,13 @@ export { FakeGit, GitCommandError, gitError } from "./git.js";
 export { AsyncQueue, LineSplitter } from "./queue.js";
 export type { ProcessExit, ProcessScript, SpawnCall, SpawnedProcess, Spawner } from "./spawner.js";
 export { FakeProcess, FakeSpawner } from "./spawner.js";
+export type {
+  HarnessAdapter,
+  HarnessCheck,
+  HarnessCheckError,
+  RunInput,
+  UnknownAdapterError,
+} from "./run/adapter.js";
+export { AdapterRegistry } from "./run/adapter.js";
+export type { RunEvent } from "./run/events.js";
+export { eventSequenceProblems, parseRunEvent, runEventKinds } from "./run/events.js";
