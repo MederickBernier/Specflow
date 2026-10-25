@@ -89,9 +89,17 @@ export function parseHistory(output: string): TraceCommit[] {
       });
     const tasks = resolve(trailers["Spec-Task"] ?? []);
     const reqs = resolve(trailers["Spec-Req"] ?? []);
-    commits.push({ hash, date, subject, files: parseNameStatus(rest), features, tasks, reqs });
+    commits.push({ hash, date: normalizeDate(date), subject, files: parseNameStatus(rest), features, tasks, reqs });
   }
   return commits;
+}
+
+/**
+ * Git versions print a UTC `%aI` as `...Z` or `...+00:00`; this returns the
+ * `+00:00` form so output is the same on every platform.
+ */
+export function normalizeDate(date: string): string {
+  return date.replace(/Z$/, "+00:00");
 }
 
 function parseNameStatus(tokens: string[]): CommitFile[] {

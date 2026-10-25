@@ -3,6 +3,7 @@ import type { Requirement, SpecTree } from "../model.js";
 import { parseRequirements } from "../parse/requirements.js";
 import { toPosixPath } from "../paths.js";
 import { err, ok, type Result } from "../result.js";
+import { normalizeDate } from "../trace/commits.js";
 
 /** The commit that last changed a requirement's text. */
 export type SpecChange = { hash: string; date: string; subject: string };
@@ -21,9 +22,16 @@ export async function lastSpecChange(
   git: Git,
   tree: SpecTree,
   requirement: Requirement,
+  /** Shares `git show HEAD:<file>` between requirements of the same file. */
+  headFiles: Map<string, Promise<Result<string, GitError>>> = new Map(),
 ): Promise<Result<SpecChange | undefined, GitError>> {
   const file = relativeTo(tree.root, requirement.location.file);
-  const head = await git.run(["show", `HEAD:./${file}`], { cwd: tree.root });
+  let pending = headFiles.get(file);
+  if (!pending) {
+    pending = git.run(["show", `HEAD:./${file}`], { cwd: tree.root });
+    headFiles.set(file, pending);
+  }
+  const head = await pending;
   if (!head.ok) return ok(undefined);
 
   const { requirements } = parseRequirements(head.value, {
@@ -46,7 +54,7 @@ export async function lastSpecChange(
     const [header = "", ...patch] = record.split("\n");
     const [hash = "", date = "", subject = ""] = header.split("\x1f");
     if (onlyAckLines(patch)) continue;
-    return ok({ hash, date, subject });
+    return ok({ hash, date: normalizeDate(date), subject });
   }
   return ok(undefined);
 }
@@ -63,7 +71,7 @@ async function fallback(git: Git, root: string, file: string): Promise<Result<Sp
   const log = await git.run(["log", "-1", "--format=%H%x1f%aI%x1f%s", "--", file], { cwd: root });
   if (!log.ok) return err(log.error);
   const [hash = "", date = "", subject = ""] = log.value.trim().split("\x1f");
-  return ok(hash ? { hash, date, subject } : undefined);
+  return ok(hash ? { hash, date: normalizeDate(date), subject } : undefined);
 }
 
 function relativeTo(root: string, path: string): string {

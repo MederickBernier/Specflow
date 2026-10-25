@@ -44,6 +44,11 @@ describe("parseTraceLog", () => {
     expect(commit).toMatchObject({ features: ["a", "b"], tasks: [], reqs: ["a/R1"] });
   });
 
+  it("normalizes UTC dates to the +00:00 form, which git versions print differently", () => {
+    const [commit] = parseTraceLog(record(["h", "2026-01-02T03:04:05Z", "s", "Spec-Feature: a\x1dSpec-Task: T1"], []));
+    expect(commit?.date).toBe("2026-01-02T03:04:05+00:00");
+  });
+
   it("leaves out commits whose trailers reference nothing", () => {
     expect(parseTraceLog(record(["h", "d", "s", "Spec-Feature: none\x1dSpec-Task: none\x1dSpec-Req: none"], ["M", "x"]))).toEqual([]);
     expect(parseTraceLog(record(["h", "d", "s", ""], ["M", "x"]))).toEqual([]);
