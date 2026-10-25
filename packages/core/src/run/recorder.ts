@@ -5,6 +5,7 @@ import type { SpecTree } from "../model.js";
 import { joinPath, toPosixPath } from "../paths.js";
 import { err, ok, type Result } from "../result.js";
 import type { RunEvent } from "./events.js";
+import { commitBody } from "./spec-notes.js";
 
 /** File name of the prepared message in staged mode, inside the git directory. */
 export const messageFileName = "SPECFLOW_MSG";
@@ -13,7 +14,7 @@ export const messageFileName = "SPECFLOW_MSG";
 export type RunOutcome = {
   ok: boolean;
   cancelled?: boolean;
-  /** `finished.summary`, used as the commit body. */
+  /** `finished.summary`; its first paragraph, without spec notes, is the commit body. */
   summary?: string;
   /** Changed paths relative to the spec root, as reported by `file-changed` events. */
   files: string[];
@@ -59,7 +60,7 @@ export async function recordRun(
     deps.git.run(args, { cwd: tree.root, ...(stdin !== undefined && { stdin }) });
 
   const subject = `feat(${task.feature}): ${task.title}`;
-  const body = run.summary?.trim();
+  const body = commitBody(run.summary);
   let message = body ? `${subject}\n\n${body}\n` : `${subject}\n`;
   if (tree.config.commit.trailers) {
     const trailers = [

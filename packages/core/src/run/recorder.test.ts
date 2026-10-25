@@ -127,6 +127,15 @@ describe("recordRun", () => {
     );
   });
 
+  // task-run/R6, R12: the body is the summary's first paragraph, never its spec notes.
+  it("uses the first paragraph of the summary as the body, without spec notes", async () => {
+    const tree = await repo("auto");
+    changeFiles();
+    const summary = "Added the lockout counter.\n\n**Files:**\n- src/auth/login.ts\n\nSpec notes:\n- R2 does not say when the counter resets.";
+    await recordRun(deps(), tree, t3, success(["src/auth/login.ts"], summary));
+    expect(git("log", "-1", "--format=%B")).toBe(`${expectedMessage}\n`);
+  });
+
   it("leaves trailers out when commit.trailers is false", async () => {
     const tree = await repo("auto", false);
     changeFiles();

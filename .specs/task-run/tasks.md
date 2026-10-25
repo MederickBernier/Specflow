@@ -92,7 +92,7 @@ depends: T4
 The prompt lists the feature's other open tasks as out of scope, forbids spec edits because specflow owns the status line, and asks for a `Spec notes:` section; snapshot updated.
 
 ## T14: Spec notes and a short commit body [R6, R12]
-status: todo
+status: done
 files: packages/core/src/run/spec-notes.ts, packages/core/src/run/recorder.ts
 depends: T7
 

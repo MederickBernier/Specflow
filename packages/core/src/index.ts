@@ -60,3 +60,5 @@ export type { CommitFile, TraceCommit } from "./trace/commits.js";
 export { parseTraceLog, readTraceCommits, traceLogArgs } from "./trace/commits.js";
 export type { FeatureTrace, RequirementTrace, TaskTrace, Trace, TracedTask, TraceError } from "./trace/trace.js";
 export { trace } from "./trace/trace.js";
+export type { SplitReply } from "./run/spec-notes.js";
+export { commitBody, extractSpecNotes } from "./run/spec-notes.js";
