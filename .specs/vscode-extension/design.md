@@ -62,6 +62,20 @@ A small webview, no framework: plain HTML and a message handler. Events are rend
 - Commit and drift data come from `Insights`, a per-root cache of `readTraceCommits` and the rule-based `checkDrift`, refreshed on spec changes, after accept or discard, and on `Specflow: Refresh specs`. CodeLens requests only read the cache, so they never run git.
 - Drift is computed only by `Specflow: Check drift` or, with `specflow.driftOnSave`, on each spec change, since it can take seconds on a large history. Otherwise lenses say `drift not checked` and the `specflow-drift` collection is cleared, so stale findings never show. Drift findings sit on the requirement heading; their message names the file and commit.
 
+## Commands
+
+| CLI | Palette |
+| --- | --- |
+| `init` | Specflow: Initialize specs |
+| `lint` | Specflow: Lint |
+| `show` | Specflow: Show |
+| `run` | Specflow: Run task |
+| `trace` | Specflow: Trace |
+| `drift` | Specflow: Check drift |
+| `harness check` | Specflow: Check harness |
+
+The table lives in `commands.ts` (`cliParity`); a unit test reads the CLI's commander setup and `package.json` and fails when a CLI command has no visible palette entry.
+
 ## Settings
 
 | Setting | Default | Purpose |

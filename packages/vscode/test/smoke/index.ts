@@ -276,6 +276,16 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
     assert.equal(items[3]?.label, "feat(accounts): Add lockout counter");
   });
 
+  // vscode-extension/R9: lint and show from the palette.
+  test("lints and shows items from the command palette", async () => {
+    const findings = (await vscode.commands.executeCommand("specflow.lint")) as { rule: string }[];
+    assert.deepEqual(findings.map((f) => f.rule), []);
+    const location = (await vscode.commands.executeCommand("specflow.show", "accounts/R2")) as vscode.Location;
+    assert.equal(location.range.start.line, 20);
+    const editor = vscode.window.activeTextEditor!;
+    assert.equal(editor.document.lineAt(editor.selection.active.line).text, "## R2: Lock out after failed attempts");
+  });
+
   test("refuses to initialize over existing specs", async () => {
     await vscode.commands.executeCommand("specflow.init");
     const product = await vscode.workspace.findFiles(".specs/product.md");

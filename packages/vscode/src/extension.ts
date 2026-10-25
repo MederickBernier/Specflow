@@ -4,6 +4,7 @@ import { NodeGit, NodeSpawner, SystemClock } from "@specflow/core/node";
 import * as vscode from "vscode";
 import { basename } from "node:path";
 import { CommitDocuments, commitScheme, SpecCodeLens } from "./codelens.js";
+import { lintCommand, showCommand } from "./commands.js";
 import { Diagnostics } from "./diagnostics.js";
 import { SpecExplorer } from "./explorer.js";
 import type { ExplorerNode } from "./explorer-nodes.js";
@@ -75,6 +76,8 @@ export type SpecflowApi = {
 export async function activate(context: vscode.ExtensionContext): Promise<SpecflowApi> {
   context.subscriptions.push(
     vscode.commands.registerCommand("specflow.init", () => initialize()),
+    vscode.commands.registerCommand("specflow.lint", () => lintCommand([...services.values()], diagnostics)),
+    vscode.commands.registerCommand("specflow.show", (target?: string) => showCommand([...services.values()], target)),
     vscode.commands.registerCommand("specflow.checkHarness", () => checkHarness(registry, firstConfig(), { quiet: false })),
     vscode.commands.registerCommand("specflow.runTask", (node?: ExplorerNode | string, task?: string) => runTaskCommand(node, task)),
     vscode.commands.registerCommand("specflow.cancelRun", () => runs.cancel()),

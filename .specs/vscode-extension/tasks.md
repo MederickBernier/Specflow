@@ -64,7 +64,7 @@ depends: T4, drift-check/T7
 Drift fixture findings appear on requirement headings; `driftOnSave` setting respected.
 
 ## T10: Command palette parity [R9]
-status: todo
+status: done
 files: packages/vscode/package.json, packages/vscode/src/commands.ts
 depends: T3, T7, T9
 

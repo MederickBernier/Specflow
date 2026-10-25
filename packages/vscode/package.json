@@ -71,6 +71,16 @@
         "command": "specflow.checkDrift",
         "title": "Check drift",
         "category": "Specflow"
+      },
+      {
+        "command": "specflow.lint",
+        "title": "Lint",
+        "category": "Specflow"
+      },
+      {
+        "command": "specflow.show",
+        "title": "Show",
+        "category": "Specflow"
       }
     ],
     "menus": {
@@ -113,6 +123,14 @@
         },
         {
           "command": "specflow.checkDrift",
+          "when": "specflow.hasSpecs"
+        },
+        {
+          "command": "specflow.lint",
+          "when": "specflow.hasSpecs"
+        },
+        {
+          "command": "specflow.show",
           "when": "specflow.hasSpecs"
         }
       ],
