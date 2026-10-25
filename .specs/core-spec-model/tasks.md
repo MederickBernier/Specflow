@@ -7,7 +7,7 @@ files: package.json, pnpm-workspace.yaml, tsconfig.base.json, .github/workflows/
 Four packages exist, `pnpm build` and `pnpm test` pass locally and in CI. No requirement yet; this unblocks everything.
 
 ## T2: Build the fixture repo generator []
-status: todo
+status: done
 files: fixtures/build.ts, fixtures/specs/**
 depends: T1
 

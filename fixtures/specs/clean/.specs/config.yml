@@ -1,0 +1,10 @@
+version: 1
+
+specsDir: .specs
+
+harness:
+  default: claude-code
+
+commit:
+  mode: staged
+  trailers: true
