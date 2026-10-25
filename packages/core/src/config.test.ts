@@ -54,7 +54,7 @@ describe("parseConfig", () => {
   it("merges a partial file over the defaults", () => {
     const config = expectOk(parseConfig("commit:\n  mode: auto\ndrift:\n  ignore: []\n"));
     expect(config.commit).toEqual({ mode: "auto", trailers: true });
-    expect(config.drift).toEqual({ llm: false, ignore: [] });
+    expect(config.drift).toEqual({ llm: false, llmBytes: 20_000, ignore: [] });
     expect(config.ids).toEqual(defaultConfig.ids);
   });
 

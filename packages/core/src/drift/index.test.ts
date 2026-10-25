@@ -78,7 +78,7 @@ describe("buildDriftIndex touched sets", () => {
   });
   const tree = (files: string[], ignore = defaultConfig.drift.ignore): SpecTree => ({
     root: "/r",
-    config: { ...defaultConfig, drift: { llm: false, ignore } },
+    config: { ...defaultConfig, drift: { ...defaultConfig.drift, ignore } },
     features: [
       {
         name: "a",

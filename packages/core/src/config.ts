@@ -15,7 +15,7 @@ export const defaultConfig: Config = {
   harness: { default: "claude-code", adapters: {} },
   ids: { requirement: "R", task: "T" },
   commit: { mode: "staged", trailers: true },
-  drift: { llm: false, ignore: ["**/*.md", "**/__snapshots__/**"] },
+  drift: { llm: false, llmBytes: 20_000, ignore: ["**/*.md", "**/__snapshots__/**"] },
 };
 
 /** Why `config.yml` could not be loaded. `issues` has one entry per invalid key. */
@@ -43,7 +43,9 @@ const fileSchema = z.object({
   commit: z
     .object({ mode: z.enum(["staged", "auto"]).optional(), trailers: z.boolean().optional() })
     .optional(),
-  drift: z.object({ llm: z.boolean().optional(), ignore: z.array(z.string()).optional() }).optional(),
+  drift: z
+    .object({ llm: z.boolean().optional(), llmBytes: z.number().int().positive().optional(), ignore: z.array(z.string()).optional() })
+    .optional(),
 });
 
 /**

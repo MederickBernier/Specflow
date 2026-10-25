@@ -87,10 +87,12 @@ export async function run(argv: string[], io: Io): Promise<number> {
     .description("Find requirements whose code and spec no longer agree")
     .argument("[target]", "feature, or feature/ID such as auth/R3")
     .option("--json", "print machine-readable output")
+    .option("--llm", "also ask the harness whether each finding's code still meets its criteria")
     .addOption(new Option("--fail-on <severity>", "exit 1 when a finding is at least this severe").choices(["warning", "error"]))
-    .action(async (target: string | undefined, options: { json?: boolean; failOn?: "warning" | "error" }) => {
+    .action(async (target: string | undefined, options: { json?: boolean; llm?: boolean; failOn?: "warning" | "error" }) => {
       code = await driftCommand(io, target, {
         json: options.json ?? false,
+        llm: options.llm ?? false,
         ...(options.failOn !== undefined && { failOn: options.failOn }),
       });
     });

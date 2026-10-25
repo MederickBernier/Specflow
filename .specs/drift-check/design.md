@@ -44,8 +44,9 @@ Trailers record intent, not what the code does. Dogfooding (`docs/dogfood/2026-1
 
 ## LLM pass
 
-- Runs through the configured harness adapter with a read-only prompt: the requirement, its acceptance criteria, and the current content of the touched files (truncated to a configured byte budget).
-- The prompt asks for a single JSON object `{ "verdict": "holds" | "broken" | "unsure", "reason": "..." }`.
+- Runs through the configured harness adapter with a read-only prompt: the requirement, its acceptance criteria, the finding, and the current content of the touched files (truncated to `drift.llmBytes`, default 20,000 bytes, across all files).
+- `checkDrift(git, tree, { llm: { adapter, fs } })` runs it after suppression, one harness run per finding, and sets `finding.verdict`. Without `llm` no harness is called. `specflow drift --llm`, or `drift.llm: true`, resolves `harness.default`, runs its `check()` first and fails with exit code 2 when it is unusable. Text output adds `  verdict: <verdict>: <reason>` under each finding.
+- The prompt asks for a single JSON object `{ "verdict": "holds" | "broken" | "unsure", "reason": "..." }`. The first `{` to the last `}` of the answer is parsed, so a code fence around it is fine.
 - A malformed answer becomes `unsure` with the raw text in the reason. Never fails the whole run.
 - Tells the harness not to edit files. If any `file-changed` event arrives, the run is aborted and the finding is marked `unsure`.
 

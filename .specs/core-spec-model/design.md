@@ -61,7 +61,7 @@ type Config = {
   harness: { default: string; adapters: Record<string, { extraArgs: string[] }> };
   ids: { requirement: string; task: string };
   commit: { mode: "staged" | "auto"; trailers: boolean };
-  drift: { llm: boolean; ignore: string[] };
+  drift: { llm: boolean; llmBytes: number; ignore: string[] };
 };
 
 type SpecTree = { root: string; config: Config; features: Feature[] };
@@ -74,6 +74,7 @@ type Finding = {
   feature: string;
   id?: string;
   evidence?: { file?: string; commit?: string; subject?: string };  // drift findings
+  verdict?: { verdict: "holds" | "broken" | "unsure"; reason: string };  // optional LLM pass
 };
 ```
 

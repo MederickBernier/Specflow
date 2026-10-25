@@ -59,7 +59,7 @@ export type Config = {
   harness: { default: string; adapters: Record<string, AdapterConfig> };
   ids: { requirement: string; task: string };
   commit: { mode: "staged" | "auto"; trailers: boolean };
-  drift: { llm: boolean; ignore: string[] };
+  drift: { llm: boolean; llmBytes: number; ignore: string[] };
 };
 
 /** Everything loaded from one repo's specs directory. */
@@ -75,4 +75,6 @@ export type Finding = {
   id?: string;
   /** What caused a drift finding: the file and commit involved. */
   evidence?: { file?: string; commit?: string; subject?: string };
+  /** The optional LLM pass's answer to "does the code still satisfy the criteria?". */
+  verdict?: { verdict: "holds" | "broken" | "unsure"; reason: string };
 };

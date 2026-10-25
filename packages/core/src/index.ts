@@ -76,3 +76,5 @@ export { specChangedSinceCode } from "./drift/rules/spec-changed.js";
 export { unimplemented } from "./drift/rules/unimplemented.js";
 export { checkDrift, driftRules } from "./drift/check.js";
 export { suppressAcked } from "./drift/suppress.js";
+export type { LlmDeps } from "./drift/llm.js";
+export { llmPass, llmPrompt, parseVerdict } from "./drift/llm.js";

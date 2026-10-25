@@ -57,8 +57,8 @@ depends: T7
 Generated repo with 5,000 commits and 200 requirements runs under 5 seconds; result recorded in the PR.
 
 ## T9: Optional LLM pass [R6]
-status: todo
-files: packages/core/src/drift/llm.ts
+status: done
+files: packages/core/src/drift/llm.ts, packages/core/src/drift/check.ts, packages/core/src/config.ts, packages/cli/src/commands/drift.ts
 depends: T7, task-run/T6
 
 With the replay adapter: valid, malformed and file-editing answers map to holds/broken, unsure, and unsure with abort.

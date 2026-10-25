@@ -1,10 +1,19 @@
 import { fileURLToPath } from "node:url";
-import { AdapterRegistry, FakeClock, toPosixPath } from "@specflow/core";
+import { AdapterRegistry, FakeClock, ReplayAdapter, type RunEvent, toPosixPath } from "@specflow/core";
 import { NodeFileSystem, NodeGit } from "@specflow/core/node";
 import { describe, expect, it } from "vitest";
 import { run } from "./program.js";
 
 const repos = toPosixPath(fileURLToPath(new URL("../../../fixtures/repos", import.meta.url)));
+
+const reviewer = (text: string) => {
+  const events: RunEvent[] = [
+    { kind: "started", runId: "r", harness: "claude-code", at: "2026-01-01T00:00:00Z" },
+    { kind: "finished", ok: true, summary: text },
+  ];
+  return new ReplayAdapter({ name: "claude-code", events });
+};
+let registry = new AdapterRegistry();
 
 async function specflow(fixture: string, ...argv: string[]) {
   const root = `${repos}/drift-${fixture}`;
@@ -14,7 +23,7 @@ async function specflow(fixture: string, ...argv: string[]) {
     cwd: `${root}/src`,
     fs: new NodeFileSystem(),
     git: new NodeGit({ cwd: root }),
-    registry: new AdapterRegistry(),
+    registry,
     clock: new FakeClock(),
     stdout: (text) => (stdout += text),
     stderr: (text) => (stderr += text),
@@ -62,5 +71,27 @@ describe("specflow drift", () => {
   it("limits findings to a target", async () => {
     expect((await specflow("code-changed-since-spec", "drift", "auth/R2")).stdout).toBe("No drift found.\n");
     expect((await specflow("code-changed-since-spec", "drift", "auth")).stdout).toContain("drift/code-changed-since-spec");
+  });
+
+  // drift-check/R6 from the CLI.
+  it("adds the harness verdict with --llm", async () => {
+    registry = new AdapterRegistry([reviewer('{"verdict":"holds","reason":"Empty passwords are rejected."}')]);
+    try {
+      const result = await specflow("code-changed-since-spec", "drift", "--llm");
+      expect(result.stdout).toContain("\n  verdict: holds: Empty passwords are rejected.\n");
+      const json = JSON.parse((await specflow("code-changed-since-spec", "drift", "--llm", "--json")).stdout);
+      expect(json.findings[0].verdict).toEqual({ verdict: "holds", reason: "Empty passwords are rejected." });
+    } finally {
+      registry = new AdapterRegistry();
+    }
+  });
+
+  it("fails clearly when --llm has no usable harness", async () => {
+    const result = await specflow("code-changed-since-spec", "drift", "--llm");
+    expect(result).toEqual({
+      code: 2,
+      stdout: "",
+      stderr: 'specflow: Unknown harness "claude-code". Registered: none\n',
+    });
   });
 });
