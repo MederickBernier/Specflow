@@ -5,7 +5,7 @@ status: todo
 files: fixtures/drift/**
 depends: core-spec-model/T2, task-run/T7
 
-One fixture per rule, plus a clean one, plus an acked one. Each fixture's expected findings are written next to it as JSON.
+One fixture per rule, plus a clean one, plus an acked one, plus one where an out-of-scope file must not widen the touched set. Each fixture's expected findings are written next to it as JSON.
 
 ## T2: TraceIndex and file history [R1, R4]
 status: todo

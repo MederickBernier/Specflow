@@ -15,7 +15,7 @@ Drift findings reuse the `Finding` type from `core-spec-model`, with `rule` valu
 ## Building blocks
 
 - **TraceIndex:** for each requirement, the commits referencing it and the files they touched. Built once per run from `git log`.
-- **Spec history:** for each requirement, the last commit that changed its text. Found with `git log -L <start>,<end>:<file>` on the requirement's line range, falling back to the file's last change if the range moved.
+- **Spec history:** for each requirement, the last commit that changed its text. Found with `git log -L <start>,<end>:<file>` on the requirement's line range, falling back to the file's last change if the range moved. A commit whose only changed lines in the range are `drift-ack:` lines does not count, so acknowledging a finding does not itself raise `spec-changed-since-code`.
 - **File history:** for each file in a requirement's touched set, commits after the requirement's last trace commit, filtered by `drift.ignore`.
 
 ## Rules
@@ -27,6 +27,14 @@ Drift findings reuse the `Finding` type from `core-spec-model`, with `rule` valu
 | `drift/unimplemented` | Approved, all tasks done, no trace commit | warning |
 
 "Touched set" is the union of files from trace commits, minus files deleted later.
+
+## Attribution
+
+Trailers record intent, not what the code does. Dogfooding (`docs/dogfood/2026-10-25-tally.md`) showed an agent writing one task's code inside another task's commit, so trailers can attribute code to the wrong requirement. `task-run/R11` warns about it at run time; drift detection limits the damage:
+
+- A trace commit adds a file to a requirement's touched set only if the file matches the `files:` patterns of one of the requirement's tasks. Tasks without `files:` do not restrict. So a file a run changed out of scope cannot widen another requirement's touched set and cause a false positive.
+- Missed attribution leaves files out of a touched set, which can only hide findings, never invent them. The rule pass errs toward false negatives, matching the v1 goal of zero false positives.
+- Files under the specs folder are never in a touched set.
 
 ## Suppression
 
