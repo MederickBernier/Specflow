@@ -34,7 +34,7 @@ A `Specs` view in the Explorer sidebar (`specflow.specs`, shown when `specflow.h
 
 ## Diagnostics
 
-Two `DiagnosticCollection`s, `specflow-lint` and `specflow-drift`, so each can be cleared independently. `Finding.severity` maps directly to `DiagnosticSeverity`.
+Two `DiagnosticCollection`s, `specflow-lint` and `specflow-drift`, so each can be cleared independently. `Finding.severity` maps directly to `DiagnosticSeverity`; the rule ID is the diagnostic `code` and the source is `specflow`. Lint diagnostics are replaced on every `SpecService` change; the files each root reported are remembered so fixed problems disappear. A tree that fails to load is shown as one error on `.specs/config.yml`.
 
 ## Run flow
 

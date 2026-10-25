@@ -1,6 +1,7 @@
 import { findRoot, type InitError, type InitResult, initSpecs, type Result } from "@specflow/core";
 import * as vscode from "vscode";
 import { basename } from "node:path";
+import { Diagnostics } from "./diagnostics.js";
 import { SpecExplorer } from "./explorer.js";
 import type { ExplorerSource } from "./explorer-nodes.js";
 import { SpecService } from "./spec-service.js";
@@ -13,6 +14,8 @@ const fs = new VsCodeFileSystem();
 
 /** One service per spec root, created as roots appear. */
 const services = new Map<string, SpecService>();
+
+const diagnostics = new Diagnostics();
 
 const explorer = new SpecExplorer(() =>
   [...services.values()].map((s): ExplorerSource => ({
@@ -33,9 +36,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<Specfl
     vscode.commands.registerCommand("specflow.refresh", async () => {
       await Promise.all([...services.values()].map((s) => s.load()));
       explorer.refresh();
+      for (const service of services.values()) diagnostics.updateLint(service);
     }),
     vscode.window.registerTreeDataProvider("specflow.specs", explorer),
     explorer,
+    diagnostics,
     vscode.workspace.onDidChangeWorkspaceFolders(() => refreshContext()),
     { dispose: () => [...services.values()].forEach((s) => s.dispose()) },
   );
@@ -63,14 +68,19 @@ async function refreshContext(): Promise<void> {
     if (!roots.includes(root)) {
       service.dispose();
       services.delete(root);
+      diagnostics.clear(root);
     }
   }
   for (const root of roots) {
     if (services.has(root)) continue;
     const service = new SpecService(root, fs);
     services.set(root, service);
-    service.onDidChange(() => explorer.refresh());
+    service.onDidChange(() => {
+      explorer.refresh();
+      diagnostics.updateLint(service);
+    });
     await service.start();
+    diagnostics.updateLint(service);
   }
   explorer.refresh();
   await vscode.commands.executeCommand("setContext", hasSpecsKey, roots.length > 0);

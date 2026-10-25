@@ -22,8 +22,8 @@ depends: T2
 Tree shows features, requirements and tasks with status icons; click opens the right line.
 
 ## T4: Lint diagnostics [R3]
-status: todo
-files: packages/vscode/src/diagnostics.ts
+status: done
+files: packages/vscode/src/diagnostics.ts, packages/vscode/src/diagnostics-data.ts
 depends: T2, core-spec-model/T8
 
 Broken fixture shows its findings in Problems; fixing and saving clears them.

@@ -78,6 +78,26 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
     assert.equal(editor.document.lineAt(editor.selection.active.line).text, "## T3: Add lockout counter [R2]");
   });
 
+  // vscode-extension/R3: lint findings appear on the right file and line, and clear when fixed.
+  test("shows lint findings in Problems and clears them once fixed", async () => {
+    const root = vscode.workspace.workspaceFolders![0]!.uri;
+    const billing = vscode.Uri.joinPath(root, ".specs/billing/tasks.md");
+    const original = new TextDecoder().decode(await vscode.workspace.fs.readFile(billing));
+    const specflow = () => vscode.languages.getDiagnostics(billing).filter((d) => d.source === "specflow");
+    assert.deepEqual(specflow(), []);
+
+    await vscode.workspace.fs.writeFile(billing, new TextEncoder().encode(original.replace("[R1]", "[R1, R7]")));
+    await eventually(() => specflow().length === 1, "unknown-ref diagnostic", 3000);
+    const [diagnostic] = specflow();
+    assert.equal(diagnostic!.code, "unknown-ref");
+    assert.equal(diagnostic!.severity, vscode.DiagnosticSeverity.Error);
+    assert.equal(diagnostic!.range.start.line, 2);
+    assert.match(diagnostic!.message, /unknown requirement R7/);
+
+    await vscode.workspace.fs.writeFile(billing, new TextEncoder().encode(original));
+    await eventually(() => specflow().length === 0, "diagnostic cleared", 3000);
+  });
+
   test("refuses to initialize over existing specs", async () => {
     await vscode.commands.executeCommand("specflow.init");
     const product = await vscode.workspace.findFiles(".specs/product.md");
