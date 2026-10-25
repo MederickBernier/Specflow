@@ -44,11 +44,36 @@ describe("buildWorkbenchState (workbench-ui/R1)", () => {
           { id: "R2", title: "Remember me", status: "draft", line: 12 },
         ],
         tasks: [
-          { id: "T1", title: "Login form", status: "done", reqs: ["R1"], depends: [], line: 3 },
-          { id: "T2", title: "Cookie", status: "todo", reqs: ["R2", "R9"], depends: ["T1"], line: 9 },
+          { id: "T1", title: "Login form", status: "done", reqs: ["R1"], depends: [], waitingOn: [], line: 3 },
+          { id: "T2", title: "Cookie", status: "todo", reqs: ["R2", "R9"], depends: ["T1"], waitingOn: [], line: 9 },
         ],
       },
     ]);
+  });
+
+  // workbench-ui/R3: a task waits on dependencies that are not done, in its feature or another.
+  it("names the dependencies a task is waiting on", () => {
+    const task = (feature: string, id: string, status: "todo" | "done", depends: string[] = []) => ({
+      feature, id, title: id, reqs: [], status, files: [], depends, body: "", extra: {}, location: loc(`/repo/.specs/${feature}/tasks.md`, 3),
+    });
+    const waiting: SpecTree = {
+      root: "/repo",
+      config: defaultConfig,
+      features: [
+        { name: "billing", dir: "/repo/.specs/billing", requirements: [], findings: [], tasks: [task("billing", "T1", "todo"), task("billing", "T2", "done")] },
+        {
+          name: "auth",
+          dir: "/repo/.specs/auth",
+          requirements: [],
+          findings: [],
+          tasks: [task("auth", "T1", "done"), task("auth", "T2", "todo"), task("auth", "T3", "todo", ["T1", "T2", "billing/T1", "billing/T2", "T9", "nowhere/T1"])],
+        },
+      ],
+    };
+    const state = buildWorkbenchState({ roots: [{ root: "/repo", name: "repo", tree: waiting }] }, 1);
+    const t3 = state.roots[0]!.features[1]!.tasks[2]!;
+    expect(t3.depends).toEqual(["T1", "T2", "billing/T1", "billing/T2", "T9", "nowhere/T1"]);
+    expect(t3.waitingOn).toEqual(["T2", "billing/T1"]);
   });
 
   it("counts lint problems", () => {

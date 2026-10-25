@@ -91,6 +91,21 @@ describe("workbench page (workbench-ui/R1)", () => {
     expect(api.state).toEqual({ tab: "board", filter: { root: "/repo", feature: "auth" } });
   });
 
+  it("forgets the Board filter when All features is picked", () => {
+    const api = fakeApi({ tab: "board", filter: { root: "/repo", feature: "auth" } });
+    const state = {
+      revision: 1,
+      harness: { state: "unknown" as const },
+      roots: [{ root: "/repo", name: "repo", lintProblems: 0, drift: { checked: false as const }, features: [{ name: "auth", requirements: [], tasks: [] }] }],
+    };
+    render(<App api={api} state={state} />);
+    const select = screen.getByRole("combobox", { name: "Feature" }) as HTMLSelectElement;
+    expect(select.value).not.toBe("");
+    select.value = "";
+    fireEvent.change(select);
+    expect(api.state).toEqual({ tab: "board" });
+  });
+
   it("moves between tabs with the keyboard, keeping one tab in the tab order", () => {
     render(<App api={fakeApi()} />);
     const tablist = screen.getByRole("tablist");

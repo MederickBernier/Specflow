@@ -22,8 +22,8 @@ depends: T2
 Counts, progress, lint, drift and harness health render per feature; load errors show; clicking a feature opens the filtered Board.
 
 ## T4: Task board [R3]
-status: todo
-files: packages/vscode/webview/board.tsx, packages/vscode/src/workbench/actions.ts, packages/vscode/src/workbench/state.ts
+status: done
+files: packages/vscode/webview/**, packages/vscode/src/workbench/actions.ts, packages/vscode/src/workbench/state.ts, packages/vscode/src/workbench/protocol.ts
 depends: T2
 
 Columns by status, waiting badges from dependencies, feature filter; Run goes through `specflow.runTask` with confirmation and is disabled during a run or review.

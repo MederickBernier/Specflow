@@ -1,4 +1,4 @@
-import { type Finding, lint, type SpecTree } from "@specflow/core";
+import { type Feature, type Finding, lint, resolveRef, type SpecTree, type Task } from "@specflow/core";
 import type { RootInsights } from "../insights.js";
 import type { DriftView, HarnessView, ReviewView, RootView, RunView, WorkbenchState } from "./protocol.js";
 
@@ -52,11 +52,28 @@ function rootView(input: RootInput): RootView {
         ...(r.priority && { priority: r.priority }),
         line: r.location.startLine,
       })),
-      tasks: feature.tasks.map((t) => ({ id: t.id, title: t.title, status: t.status, reqs: t.reqs, depends: t.depends, line: t.location.startLine })),
+      tasks: feature.tasks.map((t) => ({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        reqs: t.reqs,
+        depends: t.depends,
+        waitingOn: waitingOn(input.tree!, feature, t),
+        line: t.location.startLine,
+      })),
     })),
     lintProblems: lint(input.tree).length,
     drift: drift ? { checked: true, findings: drift.map(driftView) } : { checked: false },
   };
+}
+
+// Dependencies that exist and are not done. Unknown ones are lint's to report.
+function waitingOn(tree: SpecTree, feature: Feature, task: Task): string[] {
+  return task.depends.filter((dep) => {
+    const ref = resolveRef(dep, feature.name);
+    const found = tree.features.find((f) => f.name === ref.feature)?.tasks.find((t) => t.id === ref.id);
+    return found !== undefined && found.status !== "done";
+  });
 }
 
 function driftView(finding: Finding): DriftView {

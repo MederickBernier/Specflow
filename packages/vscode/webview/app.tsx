@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { isWorkbenchTab, type WorkbenchTab, workbenchTabs } from "../src/workbench/html.ts";
 import type { WorkbenchCommand, WorkbenchState } from "../src/workbench/protocol.ts";
+import { Board, type TaskRef } from "./board.tsx";
 import { type FeatureRef, Overview } from "./overview.tsx";
 import type { WebviewApi } from "./vscode-api.ts";
 
@@ -31,12 +32,18 @@ export function App({ api, initialTab, state }: { api: WebviewApi; initialTab?: 
     if (focus) tabRefs.current[next]?.focus();
   };
 
+  const saveFilter = (ref: FeatureRef | undefined) => {
+    setFilter(ref);
+    const { filter: _, ...rest } = api.getState() ?? {};
+    api.setState(ref ? { ...rest, filter: ref } : rest);
+  };
   // workbench-ui/R2: a feature card opens the Board filtered to that feature.
   const openFeature = (ref: FeatureRef) => {
-    setFilter(ref);
-    api.setState({ ...api.getState(), filter: ref });
+    saveFilter(ref);
     select("board");
   };
+  const run = ({ root, feature, task }: TaskRef) => api.postMessage({ type: "run", root, feature, task });
+  const open = ({ root, feature, task }: TaskRef) => api.postMessage({ type: "open", root, feature, id: task });
   const command = (name: WorkbenchCommand) => api.postMessage({ type: "command", command: name });
 
   // The host learns the current tab from a `tab` message.
@@ -96,11 +103,10 @@ export function App({ api, initialTab, state }: { api: WebviewApi; initialTab?: 
           <p class="empty">Loading specs…</p>
         ) : tab === "overview" ? (
           <Overview state={state} onOpenFeature={openFeature} onCommand={command} />
+        ) : tab === "board" ? (
+          <Board state={state} {...(filter && { filter })} onFilter={saveFilter} onRun={run} onOpen={open} />
         ) : (
-          <p class="empty">
-            {labels[tab].empty}
-            {tab === "board" && filter && ` Showing ${filter.feature}.`}
-          </p>
+          <p class="empty">{labels[tab].empty}</p>
         )}
       </section>
     </div>

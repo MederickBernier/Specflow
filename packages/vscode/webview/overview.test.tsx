@@ -12,10 +12,10 @@ const auth: RootView["features"][number] = {
     { id: "R3", title: "SSO", status: "draft", line: 15 },
   ],
   tasks: [
-    { id: "T1", title: "Form", status: "done", reqs: ["R1"], depends: [], line: 3 },
-    { id: "T2", title: "Counter", status: "done", reqs: ["R2"], depends: [], line: 8 },
-    { id: "T3", title: "Lock", status: "doing", reqs: ["R2"], depends: ["T2"], line: 13 },
-    { id: "T4", title: "SSO", status: "blocked", reqs: ["R3"], depends: [], line: 18 },
+    { id: "T1", title: "Form", status: "done", reqs: ["R1"], depends: [], waitingOn: [], line: 3 },
+    { id: "T2", title: "Counter", status: "done", reqs: ["R2"], depends: [], waitingOn: [], line: 8 },
+    { id: "T3", title: "Lock", status: "doing", reqs: ["R2"], depends: ["T2"], waitingOn: [], line: 13 },
+    { id: "T4", title: "SSO", status: "blocked", reqs: ["R3"], depends: [], waitingOn: [], line: 18 },
   ],
 };
 const billing: RootView["features"][number] = { name: "billing", requirements: [], tasks: [] };

@@ -13,7 +13,7 @@ const state: WorkbenchState = {
         {
           name: "auth",
           requirements: [{ id: "R1", title: "Sign in", status: "approved", line: 3 }],
-          tasks: [{ id: "T1", title: "Login form", status: "todo", reqs: ["R1"], depends: [], line: 3 }],
+          tasks: [{ id: "T1", title: "Login form", status: "todo", reqs: ["R1"], depends: [], waitingOn: [], line: 3 }],
         },
       ],
       drift: {

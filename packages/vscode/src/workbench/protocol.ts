@@ -8,7 +8,16 @@ import { workbenchTabs, type WorkbenchTab } from "./html.js";
 export type RunView = { target: string; status: "starting" | "running" | "cancelling" | "done" | "failed" | "cancelled" };
 
 export type RequirementView = { id: string; title: string; status: string; priority?: string; line: number };
-export type TaskView = { id: string; title: string; status: "todo" | "doing" | "done" | "blocked"; reqs: string[]; depends: string[]; line: number };
+export type TaskView = {
+  id: string;
+  title: string;
+  status: "todo" | "doing" | "done" | "blocked";
+  reqs: string[];
+  depends: string[];
+  /** Dependencies, as written in `depends:`, that are not done yet (workbench-ui/R3). */
+  waitingOn: string[];
+  line: number;
+};
 export type FeatureView = { name: string; requirements: RequirementView[]; tasks: TaskView[] };
 
 export type DriftView = {

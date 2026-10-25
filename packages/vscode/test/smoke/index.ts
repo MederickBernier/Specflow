@@ -115,7 +115,7 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
   });
 
   // vscode-extension/R4: run a task, stream its events, cancel it.
-  type Run = { state: { status: string; lines: { kind: string; text: string }[]; usage?: string; outcome?: string }; cancel: () => void };
+  type Run = { target: string; state: { status: string; lines: { kind: string; text: string }[]; usage?: string; outcome?: string }; cancel: () => void };
   type Api = {
     registry: { register: (adapter: unknown) => void };
     runs: { current?: Run };
@@ -309,9 +309,31 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
     receive: (message: unknown) => unknown;
   };
 
+  // workbench-ui/R3: Run on a board card goes through Specflow: Run task; Open shows the heading.
+  test("runs and opens tasks from the board", async () => {
+    type Workbench = { state?: { roots: { root: string }[]; run?: { target: string; status: string } }; receive: (message: unknown) => unknown };
+    const api = extension().exports as Api & { workbench: Workbench };
+    await eventually(() => api.workbench.state !== undefined, "the workbench state");
+    const root = api.workbench.state!.roots[0]!.root;
+    api.registry.register({ name: "smoke-board", check: async () => ({ ok: true, value: { version: "1", warnings: [] } }), run: async function* () { yield* smokeEvents; } });
+    await withRunSettings(async () => {
+      await vscode.workspace.getConfiguration("specflow").update("harness", "smoke-board", vscode.ConfigurationTarget.Global);
+      assert.ok(api.workbench.receive({ type: "run", root, feature: "accounts", task: "T1" }), "the run intent is accepted");
+      await eventually(() => api.runs.current?.target === "accounts/T1" && api.runs.current.state.status === "done", "the board's run to finish");
+      await eventually(() => api.workbench.state?.run?.target === "accounts/T1" && api.workbench.state.run.status === "done", "the run in the workbench state");
+    });
+
+    assert.ok(api.workbench.receive({ type: "open", root, feature: "accounts", id: "R2" }));
+    await eventually(() => vscode.window.activeTextEditor?.document.uri.path.endsWith(".specs/accounts/requirements.md") === true, "requirements.md to open");
+    const editor = vscode.window.activeTextEditor!;
+    assert.equal(editor.document.lineAt(editor.selection.active.line).text, "## R2: Lock out after failed attempts");
+  });
+
   // workbench-ui/R1: a spec change reaches the open page within 1 second; the page renders what it was sent.
   test("keeps the open workbench current and drops messages it cannot verify", async () => {
     const api = (extension().exports as { workbench: WorkbenchApi }).workbench;
+    // A hidden page is torn down; showing it again makes it ask for the state.
+    await vscode.commands.executeCommand("specflow.openWorkbench");
     await eventually(() => api.state !== undefined && api.rendered === api.state.revision, "the page to render the state");
     assert.match(api.state!.run?.target ?? "", /^accounts\/T\d+$/, "the latest run is in the state");
 
