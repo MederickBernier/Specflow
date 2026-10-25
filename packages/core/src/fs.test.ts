@@ -44,6 +44,18 @@ describe.each(implementations)("%s", (_name, fs, root) => {
     expect(await fs.listDir(join(root, "list"))).toEqual(["alpha", "beta.md", "zeta.md"]);
   });
 
+  it("lists only directories when asked", async () => {
+    await fs.writeFile(join(root, "dirs/zeta/tasks.md"), "");
+    await fs.writeFile(join(root, "dirs/config.yml"), "");
+    await fs.writeFile(join(root, "dirs/alpha/deep/design.md"), "");
+    expect(await fs.listDir(join(root, "dirs"), { directoriesOnly: true })).toEqual(["alpha", "zeta"]);
+  });
+
+  it("returns an empty list for a directory with no subdirectories", async () => {
+    await fs.writeFile(join(root, "flat/a.md"), "");
+    expect(await fs.listDir(join(root, "flat"), { directoriesOnly: true })).toEqual([]);
+  });
+
   it("rejects listing a missing directory", async () => {
     await expect(fs.listDir(join(root, "nowhere"))).rejects.toThrow();
   });

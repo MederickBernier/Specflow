@@ -106,11 +106,11 @@ interface FileSystem {
   readFile(path: string): Promise<string>;
   writeFile(path: string, content: string): Promise<void>;
   exists(path: string): Promise<boolean>;
-  listDir(path: string): Promise<string[]>;
+  listDir(path: string, options?: { directoriesOnly?: boolean }): Promise<string[]>;
 }
 ```
 
-Paths are absolute. `readFile` rejects on a missing file, `writeFile` creates parent directories, `exists` is true for files and directories, `listDir` returns sorted entry names and rejects on a missing directory.
+Paths are absolute. `readFile` rejects on a missing file, `writeFile` creates parent directories, `exists` is true for files and directories, `listDir` returns sorted entry names (only subdirectories with `directoriesOnly`, which is how the loader finds feature folders) and rejects on a missing directory.
 
 A Node implementation lives in `core/node`. Tests use an in-memory implementation.
 

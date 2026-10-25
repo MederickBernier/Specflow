@@ -1,6 +1,6 @@
-import { access, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
-import type { FileSystem } from "../fs.js";
+import { access, mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import type { FileSystem, ListDirOptions } from "../fs.js";
 
 /** {@link FileSystem} over the local disk. */
 export class NodeFileSystem implements FileSystem {
@@ -22,7 +22,25 @@ export class NodeFileSystem implements FileSystem {
     }
   }
 
-  async listDir(path: string): Promise<string[]> {
-    return (await readdir(path)).sort();
+  async listDir(path: string, options: ListDirOptions = {}): Promise<string[]> {
+    if (!options.directoriesOnly) {
+      return (await readdir(path)).sort();
+    }
+    const names: string[] = [];
+    for (const entry of await readdir(path, { withFileTypes: true })) {
+      // A symlink counts when it points to a directory.
+      if (entry.isDirectory() || (entry.isSymbolicLink() && (await isDirectory(join(path, entry.name))))) {
+        names.push(entry.name);
+      }
+    }
+    return names.sort();
+  }
+}
+
+async function isDirectory(path: string): Promise<boolean> {
+  try {
+    return (await stat(path)).isDirectory();
+  } catch {
+    return false;
   }
 }

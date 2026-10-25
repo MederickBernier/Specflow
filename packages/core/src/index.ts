@@ -1,4 +1,4 @@
-export type { FileSystem } from "./fs.js";
+export type { FileSystem, ListDirOptions } from "./fs.js";
 export { MemoryFileSystem } from "./fs.js";
 export type {
   AdapterConfig,
