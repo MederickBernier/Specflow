@@ -5,6 +5,8 @@ import * as vscode from "vscode";
 import { basename } from "node:path";
 import { Diagnostics } from "./diagnostics.js";
 import { SpecExplorer } from "./explorer.js";
+import type { ExplorerNode } from "./explorer-nodes.js";
+import { RunController } from "./run/run-controller.js";
 import { checkHarness } from "./harness-health.js";
 import type { ExplorerSource } from "./explorer-nodes.js";
 import { SpecService } from "./spec-service.js";
@@ -24,6 +26,8 @@ const git = new NodeGit();
 const clock = new SystemClock();
 const registry = new AdapterRegistry([new ClaudeCodeAdapter({ spawner: new NodeSpawner(), git, clock })]);
 
+const runs = new RunController({ fs, git, registry, clock });
+
 /** The config of the first spec root, for harness selection. */
 const firstConfig = () => [...services.values()].find((s) => s.tree)?.tree?.config;
 
@@ -37,13 +41,21 @@ const explorer = new SpecExplorer(() =>
 );
 
 /** What `activate` returns; also used by the smoke tests. */
-export type SpecflowApi = { services: () => SpecService[]; explorer: SpecExplorer; registry: AdapterRegistry };
+export type SpecflowApi = {
+  services: () => SpecService[];
+  explorer: SpecExplorer;
+  registry: AdapterRegistry;
+  runs: RunController;
+};
 
 /** Runs when a workspace contains `.specs/`, or when `Initialize specs` is invoked. */
 export async function activate(context: vscode.ExtensionContext): Promise<SpecflowApi> {
   context.subscriptions.push(
     vscode.commands.registerCommand("specflow.init", () => initialize()),
     vscode.commands.registerCommand("specflow.checkHarness", () => checkHarness(registry, firstConfig(), { quiet: false })),
+    vscode.commands.registerCommand("specflow.runTask", (node?: ExplorerNode | string, task?: string) => runTaskCommand(node, task)),
+    vscode.commands.registerCommand("specflow.cancelRun", () => runs.cancel()),
+    runs,
     vscode.commands.registerCommand("specflow.refresh", async () => {
       await Promise.all([...services.values()].map((s) => s.load()));
       explorer.refresh();
@@ -58,7 +70,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Specfl
   await refreshContext();
   // vscode-extension/R8: tell the user early if runs cannot work. Not awaited, so activation stays fast.
   if (services.size > 0) void checkHarness(registry, firstConfig(), { quiet: true });
-  return { services: () => [...services.values()], explorer, registry };
+  return { services: () => [...services.values()], explorer, registry, runs };
 }
 
 export function deactivate(): void {}
@@ -125,4 +137,38 @@ async function initialize(): Promise<Result<InitResult, InitError | { kind: "no-
     `Specflow: created ${result.value.created.length} files in .specs/. Edit product.md and tech.md, then run Specflow: Lint.`,
   );
   return result;
+}
+
+/**
+ * `specflow.runTask`: from a task node in the explorer, with (feature, task)
+ * arguments, or from the palette with a pick of the open tasks.
+ */
+async function runTaskCommand(node?: ExplorerNode | string, taskId?: string) {
+  let target: { root?: string; feature: string; id: string } | undefined;
+  if (typeof node === "object" && node.ref) target = node.ref;
+  else if (typeof node === "string" && taskId) target = { feature: node, id: taskId };
+  else {
+    const picks = [...services.values()].flatMap((s) =>
+      (s.tree?.features ?? []).flatMap((f) =>
+        f.tasks
+          .filter((t) => t.status !== "done")
+          .map((t) => ({ label: `${f.name}/${t.id}`, description: t.title, detail: t.status, ref: { root: s.root, feature: f.name, id: t.id } })),
+      ),
+    );
+    if (picks.length === 0) {
+      void vscode.window.showInformationMessage("Specflow: every task is done.");
+      return undefined;
+    }
+    target = (await vscode.window.showQuickPick(picks, { placeHolder: "Task to run" }))?.ref;
+  }
+  if (!target) return undefined;
+
+  const service =
+    (target.root && services.get(target.root)) ||
+    [...services.values()].find((s) => s.tree?.features.some((f) => f.name === target.feature && f.tasks.some((t) => t.id === target.id)));
+  if (!service?.tree) {
+    void vscode.window.showErrorMessage(`Specflow: no task ${target.feature}/${target.id}`);
+    return undefined;
+  }
+  return runs.run(service.tree, target.feature, target.id);
 }

@@ -101,16 +101,86 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
   // vscode-extension/R8: the check command reports the configured harness.
   test("checks the harness, honoring specflow.harness", async () => {
     const settings = vscode.workspace.getConfiguration("specflow");
-    await settings.update("harness", "aider", vscode.ConfigurationTarget.Workspace);
+    // User scope, so no .vscode/settings.json makes the tree dirty for the run tests.
+    await settings.update("harness", "aider", vscode.ConfigurationTarget.Global);
     try {
       const result = (await vscode.commands.executeCommand("specflow.checkHarness")) as { ready: boolean; harness?: string };
       assert.deepEqual(result, { ready: false });
     } finally {
-      await settings.update("harness", undefined, vscode.ConfigurationTarget.Workspace);
+      await settings.update("harness", undefined, vscode.ConfigurationTarget.Global);
     }
     const result = (await vscode.commands.executeCommand("specflow.checkHarness")) as { harness?: string; check?: { ok: boolean } };
     assert.equal(result.harness, "claude-code");
     assert.equal(typeof result.check?.ok, "boolean");
+  });
+
+  // vscode-extension/R4: run a task, stream its events, cancel it.
+  type Run = { state: { status: string; lines: { kind: string; text: string }[]; usage?: string; outcome?: string }; cancel: () => void };
+  type Api = {
+    registry: { register: (adapter: unknown) => void };
+    runs: { current?: Run };
+  };
+  const smokeEvents = [
+    { kind: "started", runId: "smoke", harness: "smoke", at: "2026-01-01T00:00:00Z" },
+    { kind: "message", role: "assistant", text: "Looking at the lockout counter." },
+    { kind: "tool-call", tool: "Read", summary: "src/auth/login.ts" },
+    { kind: "usage", inputTokens: 1200, outputTokens: 300, costUsd: 0.004, durationMs: 2500 },
+    { kind: "finished", ok: true, summary: "Nothing to change." },
+  ];
+
+  async function withRunSettings(body: () => Promise<void>) {
+    const settings = vscode.workspace.getConfiguration("specflow");
+    await settings.update("confirmRuns", false, vscode.ConfigurationTarget.Global);
+    try {
+      await body();
+    } finally {
+      await settings.update("confirmRuns", undefined, vscode.ConfigurationTarget.Global);
+      await settings.update("harness", undefined, vscode.ConfigurationTarget.Global);
+    }
+  }
+
+  test("runs a task and streams its events into the run view", async () => {
+    const api = extension().exports as Api;
+    api.registry.register({ name: "smoke", check: async () => ({ ok: true, value: { version: "1", warnings: [] } }), run: async function* () { yield* smokeEvents; } });
+    await withRunSettings(async () => {
+      await vscode.workspace.getConfiguration("specflow").update("harness", "smoke", vscode.ConfigurationTarget.Global);
+      const result = (await vscode.commands.executeCommand("specflow.runTask", "accounts", "T3")) as { ok: boolean } | undefined;
+      assert.equal(result?.ok, true);
+      const state = api.runs.current!.state;
+      assert.equal(state.status, "done");
+      assert.deepEqual(state.lines, [
+        { kind: "message", text: "Looking at the lockout counter." },
+        { kind: "tool", text: "Read src/auth/login.ts" },
+      ]);
+      assert.equal(state.usage, "1,200 tokens in, 300 out, $0.00, 2.5 s");
+      assert.match(state.outcome ?? "", /No files changed/);
+      const tab = vscode.window.tabGroups.all.flatMap((g) => g.tabs).find((t) => t.label === "Run accounts/T3");
+      assert.ok(tab, "run view is open");
+    });
+  });
+
+  test("cancels a running task", async () => {
+    const api = extension().exports as Api;
+    api.registry.register({
+      name: "smoke-hang",
+      check: async () => ({ ok: true, value: { version: "1", warnings: [] } }),
+      run: async function* (_input: unknown, signal: AbortSignal) {
+        yield smokeEvents[0];
+        await new Promise<void>((resolve) => (signal.aborted ? resolve() : signal.addEventListener("abort", () => resolve())));
+        yield { kind: "finished", ok: false, cancelled: true };
+      },
+    });
+    await withRunSettings(async () => {
+      await vscode.workspace.getConfiguration("specflow").update("harness", "smoke-hang", vscode.ConfigurationTarget.Global);
+      const pending = vscode.commands.executeCommand("specflow.runTask", "accounts", "T3") as Thenable<{ cancelled: boolean } | undefined>;
+      await eventually(() => api.runs.current?.state.status === "running", "run started");
+      await vscode.commands.executeCommand("specflow.cancelRun");
+      const result = await pending;
+      assert.equal(result?.cancelled, true);
+      assert.equal(api.runs.current!.state.status, "cancelled");
+    });
+    const tasks = new TextDecoder().decode(await vscode.workspace.fs.readFile(vscode.Uri.joinPath(vscode.workspace.workspaceFolders![0]!.uri, ".specs/accounts/tasks.md")));
+    assert.match(tasks, /## T3: Add lockout counter \[R2\]\nstatus: todo/);
   });
 
   test("refuses to initialize over existing specs", async () => {

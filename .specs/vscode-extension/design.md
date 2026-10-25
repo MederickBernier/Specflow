@@ -42,16 +42,18 @@ Two `DiagnosticCollection`s, `specflow-lint` and `specflow-drift`, so each can b
 
 ## Run flow
 
-1. Command `specflow.runTask(feature, taskId)`.
+1. Command `specflow.runTask(feature, taskId)`: from a task node (inline ▶ and context menu), with arguments, or from the palette with a pick of open tasks.
 2. `adapter.check()`; on failure show R8's message.
-3. Confirmation quick pick unless `specflow.confirmRuns` is false.
-4. Runner starts; `RunView` opens and renders events as they arrive.
+3. Confirmation (a modal naming task, harness and commit mode) unless `specflow.confirmRuns` is false. A dirty tree offers `Run anyway`, which retries with `allowDirty`.
+4. Core's `runTask` (the same flow as `specflow run`) starts; `RunView` opens beside the editor and renders events as they arrive. `Specflow: Cancel run`, or the view's Cancel button, aborts it.
 5. On `finished` with `ok`, show the changed files in a tree under the run, each opening `vscode.diff(HEAD version, working file)` through the built-in Git extension API.
 6. Accept runs `git commit -F` with the prepared message. Discard restores files with `git restore`, after a modal confirmation.
 
 ## RunView
 
 A small webview, no framework: plain HTML and a message handler. Events are rendered as a list; `usage` shows in a footer. Cancel posts a message that aborts the run's `AbortController`.
+
+`run-view-model.ts` reduces events to a view state and renders it to escaped HTML without the VS Code API, so both are unit tested; the extension posts the rendered body and the page swaps it in. The page has a strict CSP with a nonce for its one script and style. After the run, the outcome (recording, scope warnings, spec notes) is shown under the events.
 
 ## Settings
 

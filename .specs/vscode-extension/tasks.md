@@ -36,7 +36,7 @@ depends: T1, task-run/T6
 Missing binary shows the message and install button.
 
 ## T6: Run controller and RunView [R4]
-status: todo
+status: done
 files: packages/vscode/src/run/**
 depends: T5, task-run/T5
 

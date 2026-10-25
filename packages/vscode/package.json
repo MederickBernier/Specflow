@@ -33,6 +33,17 @@
         "command": "specflow.checkHarness",
         "title": "Check harness",
         "category": "Specflow"
+      },
+      {
+        "command": "specflow.runTask",
+        "title": "Run task",
+        "category": "Specflow",
+        "icon": "$(play)"
+      },
+      {
+        "command": "specflow.cancelRun",
+        "title": "Cancel run",
+        "category": "Specflow"
       }
     ],
     "menus": {
@@ -48,6 +59,14 @@
         {
           "command": "specflow.checkHarness",
           "when": "specflow.hasSpecs"
+        },
+        {
+          "command": "specflow.runTask",
+          "when": "specflow.hasSpecs"
+        },
+        {
+          "command": "specflow.cancelRun",
+          "when": "specflow.hasSpecs"
         }
       ],
       "view/title": [
@@ -55,6 +74,18 @@
           "command": "specflow.refresh",
           "when": "view == specflow.specs",
           "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "specflow.runTask",
+          "when": "view == specflow.specs && viewItem == task",
+          "group": "inline"
+        },
+        {
+          "command": "specflow.runTask",
+          "when": "view == specflow.specs && viewItem == task",
+          "group": "1_run"
         }
       ]
     },
@@ -74,6 +105,11 @@
           "type": "string",
           "default": "",
           "description": "Agent harness to use on this machine, overriding harness.default in .specs/config.yml. Leave empty to use the config."
+        },
+        "specflow.confirmRuns": {
+          "type": "boolean",
+          "default": true,
+          "description": "Ask before each run, showing the task, harness and commit mode."
         }
       }
     }

@@ -12,6 +12,8 @@ export type ExplorerNode = {
   location?: Location;
   /** For menus: `root`, `feature`, `requirement`, `task` or `error`. */
   kind: "root" | "feature" | "requirement" | "task" | "error";
+  /** The spec item behind a requirement or task node, for commands. */
+  ref?: { root: string; feature: string; id: string };
   children: ExplorerNode[];
 };
 
@@ -89,6 +91,7 @@ function requirementNode(root: string, r: Requirement): ExplorerNode {
     icon: requirementIcons[r.status],
     location: r.location,
     kind: "requirement",
+    ref: { root, feature: r.feature, id: r.id },
     children: [],
   };
 }
@@ -102,6 +105,7 @@ function taskNode(root: string, t: Task): ExplorerNode {
     icon: taskIcons[t.status],
     location: t.location,
     kind: "task",
+    ref: { root, feature: t.feature, id: t.id },
     children: [],
   };
 }
