@@ -27,7 +27,7 @@ Agentic coding tools write code fast but lose the "why". After a few iterations 
 - Specs are plain markdown that humans and agents both read. No proprietary format.
 - The CLI can do everything the extension does. The extension renders and dispatches.
 - Flag, never silently rewrite. Humans decide when the spec changes.
-- Reuse VS Code and the harness for what they already do well (chat, diff editor, git graph).
+- Reuse VS Code and the harness for what they already do well (chat, editor, git graph). The workbench shows diffs in the context of a run or requirement, with VS Code's diff editor one click away.
 
 ## Non-goals for v1
 

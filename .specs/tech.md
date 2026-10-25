@@ -4,7 +4,8 @@
 
 - TypeScript (strict, ES2023), Node 22.18 or later (runs `.ts` scripts without a loader)
 - pnpm workspaces monorepo
-- esbuild for the extension bundle, tsc for library builds
+- esbuild for the extension and webview bundles, tsc for library builds
+- Preact for the workbench webview
 - Vitest for unit and integration tests
 - @vscode/test-electron for extension smoke tests
 - GitHub Actions for CI, on Linux and Windows
@@ -16,7 +17,7 @@
 | `@specflow/core` | Spec model, lint, trace graph, drift rules, adapter interface, event model | remark, yaml, zod (`core/node` entry point also: simple-git) |
 | `@specflow/adapter-claude-code` | Runs a task through Claude Code headless | core |
 | `@specflow/cli` | Terminal front end | core, adapters, commander |
-| `specflow-vscode` | VS Code shell | core, adapters, vscode API |
+| `specflow-vscode` | VS Code shell | core, adapters, vscode API, preact (webview only) |
 
 ## Architecture rules
 

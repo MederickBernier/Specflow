@@ -2,7 +2,7 @@
 
 ## Overview
 
-The extension imports `@specflow/core` and the adapters directly, in the extension host. No webview in v1 except the run output view.
+The extension imports `@specflow/core` and the adapters directly, in the extension host. Webviews are the run output view and the workbench (see `workbench-ui`).
 
 ```
 extension.ts
@@ -91,4 +91,4 @@ esbuild bundles to a single `dist/extension.js` (minified for packaging, about 7
 ## Alternatives considered
 
 - **Call the CLI as a subprocess instead of importing core:** cleaner isolation, slower and harder to stream. Kept as the model for the JetBrains shell, not used here.
-- **A full webview UI (React) for the explorer:** nicer looking, but native tree views are faster and theme correctly. Revisit for post-v1 visuals.
+- **A full webview UI (React) for the explorer:** nicer looking, but native tree views are faster and theme correctly. The explorer stays native; the richer views are the `workbench-ui` feature.
