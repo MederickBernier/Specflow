@@ -22,6 +22,10 @@ export class NodeFileSystem implements FileSystem {
     }
   }
 
+  async size(path: string): Promise<number> {
+    return (await stat(path)).size;
+  }
+
   async listDir(path: string, options: ListDirOptions = {}): Promise<string[]> {
     if (!options.directoriesOnly) {
       return (await readdir(path)).sort();

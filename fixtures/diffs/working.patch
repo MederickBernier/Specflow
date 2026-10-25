@@ -1,0 +1,87 @@
+diff --git a/added.txt b/added.txt
+new file mode 100644
+index 0000000..3e75765
+--- /dev/null
++++ b/added.txt
+@@ -0,0 +1 @@
++new
+diff --git a/blob.bin b/blob.bin
+index 8352675..d0c3599 100644
+Binary files a/blob.bin and b/blob.bin differ
+diff --git a/gone.txt b/gone.txt
+deleted file mode 100644
+index 2fa992c..0000000
+--- a/gone.txt
++++ /dev/null
+@@ -1 +0,0 @@
+-keep
+diff --git a/pure.txt b/moved.txt
+similarity index 100%
+rename from pure.txt
+rename to moved.txt
+diff --git a/multi.txt b/multi.txt
+index e031777..73b32b4 100644
+--- a/multi.txt
++++ b/multi.txt
+@@ -1,5 +1,5 @@
+ one
+-two
++TWO
+ three
+ four
+ five
+@@ -8,5 +8,5 @@ seven
+ eight
+ nine
+ ten
+-eleven
++ELEVEN
+ twelve
+diff --git a/old-name.txt b/new-name.txt
+similarity index 83%
+rename from old-name.txt
+rename to new-name.txt
+index 0fdf397..72ce94f 100644
+--- a/old-name.txt
++++ b/new-name.txt
+@@ -1,6 +1,6 @@
+ a
+ b
+-c
++C
+ d
+ e
+ f
+diff --git a/nonl.txt b/nonl.txt
+index e32b0df..c3f9d26 100644
+--- a/nonl.txt
++++ b/nonl.txt
+@@ -1 +1,2 @@
+-end
+\ No newline at end of file
++end
++more
+diff --git a/script.sh b/script.sh
+old mode 100644
+new mode 100755
+diff --git "a/tab\there.txt" "b/tab\there.txt"
+index b680253..e556b83 100644
+--- "a/tab\there.txt"
++++ "b/tab\there.txt"
+@@ -1 +1 @@
+-z
++w
+diff --git a/with space.txt b/with space.txt
+index 587be6b..975fbec 100644
+--- a/with space.txt	
++++ b/with space.txt	
+@@ -1 +1 @@
+-x
++y
+diff --git "a/\303\251.txt" "b/\303\251.txt"
+index bca70f3..4286f42 100644
+--- "a/\303\251.txt"
++++ "b/\303\251.txt"
+@@ -1 +1 @@
+-q
++r

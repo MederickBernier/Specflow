@@ -25,6 +25,12 @@ describe.each(implementations)("%s", (_name, fs, root) => {
     expect(await fs.readFile(join(root, "x.md"))).toBe("two");
   });
 
+  it("reports a file's size in bytes", async () => {
+    await fs.writeFile(join(root, "sized.md"), "é\n");
+    expect(await fs.size(join(root, "sized.md"))).toBe(3);
+    await expect(fs.size(join(root, "missing.md"))).rejects.toThrow();
+  });
+
   it("rejects reading a missing file", async () => {
     await expect(fs.readFile(join(root, "missing.md"))).rejects.toThrow();
   });

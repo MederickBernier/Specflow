@@ -27,6 +27,10 @@ export class VsCodeFileSystem implements FileSystem {
     }
   }
 
+  async size(path: string): Promise<number> {
+    return (await vscode.workspace.fs.stat(vscode.Uri.file(path))).size;
+  }
+
   async listDir(path: string, options: ListDirOptions = {}): Promise<string[]> {
     const entries = await vscode.workspace.fs.readDirectory(vscode.Uri.file(path));
     return entries

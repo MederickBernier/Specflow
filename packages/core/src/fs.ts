@@ -7,6 +7,8 @@ import { toPosixPath } from "./paths.js";
  * - `readFile` rejects when the file does not exist.
  * - `writeFile` creates missing parent directories.
  * - `exists` is true for files and directories.
+ * - `size` is a file's length in bytes, so large files can be skipped before
+ *   they are read; it rejects when the file does not exist.
  * - `listDir` returns entry names (files and directories, or directories
  *   only with `directoriesOnly`), sorted, and rejects when the directory
  *   does not exist.
@@ -15,6 +17,7 @@ export interface FileSystem {
   readFile(path: string): Promise<string>;
   writeFile(path: string, content: string): Promise<void>;
   exists(path: string): Promise<boolean>;
+  size(path: string): Promise<number>;
   listDir(path: string, options?: ListDirOptions): Promise<string[]>;
 }
 
@@ -47,6 +50,10 @@ export class MemoryFileSystem implements FileSystem {
   async exists(path: string): Promise<boolean> {
     const key = normalize(path);
     return this.#files.has(key) || this.#children(key) !== undefined;
+  }
+
+  async size(path: string): Promise<number> {
+    return new TextEncoder().encode(await this.readFile(path)).length;
   }
 
   async listDir(path: string, options: ListDirOptions = {}): Promise<string[]> {

@@ -29,8 +29,8 @@ depends: T2
 Columns by status, waiting badges from dependencies, feature filter; Run goes through `specflow.runTask` with confirmation and is disabled during a run or review.
 
 ## T5: Unified diff model in core [R4, R5]
-status: todo
-files: packages/core/src/diff/**, packages/core/src/index.ts, fixtures/diffs/**
+status: done
+files: packages/core/src/diff/**, packages/core/src/index.ts, fixtures/diffs/**, packages/core/src/fs.ts, packages/core/src/node/fs.ts, packages/vscode/src/vscode-fs.ts
 depends: task-run/T7
 
 `parseUnifiedDiff`, `readWorkingDiff` (with untracked files, never touching the index) and `readCommitDiff` pass on recorded patches and a fixture repo, including size limits.

@@ -43,7 +43,7 @@ describe("findRoot", () => {
   it("does not mistake the root for a UNC path when walking up", async () => {
     const seen: string[] = [];
     const fs = new MemoryFileSystem({ "/tmp/empty/x.ts": "" });
-    const spy = { ...fs, readFile: fs.readFile.bind(fs), writeFile: fs.writeFile.bind(fs), listDir: fs.listDir.bind(fs), exists: (p: string) => (seen.push(p), fs.exists(p)) };
+    const spy = { ...fs, readFile: fs.readFile.bind(fs), writeFile: fs.writeFile.bind(fs), listDir: fs.listDir.bind(fs), size: fs.size.bind(fs), exists: (p: string) => (seen.push(p), fs.exists(p)) };
     expect(await findRoot(spy, "/tmp/empty")).toBeUndefined();
     expect(seen).toContain("/.specs");
     expect(seen.some((p) => p.startsWith("//"))).toBe(false);
