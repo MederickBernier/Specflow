@@ -43,7 +43,7 @@ depends: T1, T2, T12
 Contract tests on the spike fixtures map every recorded stream to the expected `RunEvent` sequence; `check()` reports a missing binary clearly.
 
 ## T7: Recorder with trailers [R6]
-status: todo
+status: done
 files: packages/core/src/run/recorder.ts
 depends: T5
 

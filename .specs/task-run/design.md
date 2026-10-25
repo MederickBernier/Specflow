@@ -156,9 +156,13 @@ Template lives in `core/src/run/prompt.ts` (`buildTaskPrompt(fs, tree, { feature
 
 ## Recording
 
-- Trailers are appended with `git interpret-trailers` semantics: a blank line, then `Key: value` lines.
-- Commit subject comes from the task title: `feat({feature}): {task title}`.
-- In `staged` mode the prepared message is written to `.git/SPECFLOW_MSG` and returned, so the user can commit with `git commit -F`.
+- `recordRun(deps, tree, { feature, task }, { ok, cancelled, summary, files })`; `changedFiles(events)` collects `files` from `file-changed` events.
+- Trailers are appended by running `git interpret-trailers`: a blank line, then `Key: value` lines. A task with `[]` gets `Spec-Req: none`. `commit.trailers: false` leaves them out.
+- Commit subject comes from the task title: `feat({feature}): {task title}`; `finished.summary`, when present, is the body.
+- Files are staged with `git add -A -- :(literal)<path>...`, so deletions are recorded and names with `*` or `[` are never globs.
+- In `staged` mode the prepared message is written to `<git dir>/SPECFLOW_MSG` (from `git rev-parse --absolute-git-dir`) and returned, so the user can commit with `git commit -F`.
+- In `auto` mode the commit uses the same pathspecs (`git commit -F - -- <paths>`), so only the run's files are committed and anything the user had staged stays staged.
+- A failed or cancelled run, or a successful one with no changed files, touches nothing and returns `{ mode: "skipped", reason }`.
 
 ## Status updates
 

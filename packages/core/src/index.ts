@@ -52,3 +52,5 @@ export type { StatusEntry } from "./git-status.js";
 export { gitStatus, parseStatus } from "./git-status.js";
 export type { RunError, RunHandle, RunnerDeps, RunRequest } from "./run/runner.js";
 export { cancelGraceMs, startRun } from "./run/runner.js";
+export type { RecordError, Recording, RunOutcome } from "./run/recorder.js";
+export { changedFiles, messageFileName, recordRun } from "./run/recorder.js";
