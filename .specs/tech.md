@@ -1,0 +1,47 @@
+# Tech
+
+## Stack
+
+- TypeScript (strict), Node 20 or later
+- pnpm workspaces monorepo
+- esbuild for the extension bundle, tsc for library builds
+- Vitest for unit and integration tests
+- @vscode/test-electron for extension smoke tests
+- GitHub Actions for CI
+
+## Packages
+
+| Package | Role | May depend on |
+| --- | --- | --- |
+| `@specflow/core` | Spec model, lint, trace graph, drift rules, adapter interface, event model | remark, simple-git, yaml, zod |
+| `@specflow/adapter-claude-code` | Runs a task through Claude Code headless | core |
+| `@specflow/cli` | Terminal front end | core, adapters, commander |
+| `specflow-vscode` | VS Code shell | core, adapters, vscode API |
+
+## Architecture rules
+
+- `core` never imports `vscode`, never spawns processes, never reads environment variables directly. I/O goes through injected interfaces (`FileSystem`, `Git`, `Clock`).
+- Adapters translate harness output into the normalized event model in `core`. Nothing outside an adapter knows harness-specific flags or formats.
+- If a feature can live in `core`, it does. The CLI and the extension only parse input, call `core`, and render output.
+- Every CLI command supports `--json` with a stable, versioned output schema. The extension may call `core` directly, but the JSON schema is the contract other shells use.
+
+## Conventions
+
+- Errors: return typed result objects (`{ ok: true, value } | { ok: false, error }`) from `core`. Throw only for programmer errors.
+- No default exports.
+- File names in kebab-case, types in PascalCase.
+- Public functions in `core` have TSDoc comments.
+- Commits use Conventional Commits for the subject line, plus spec trailers (see `README.md`).
+
+## Testing
+
+- `core`: unit tests plus fixture repos under `fixtures/` (real git repos built by a setup script, not committed `.git` folders).
+- Adapters: contract tests against recorded event streams in `fixtures/streams/`. No live model calls in CI.
+- CLI: snapshot tests on text and JSON output.
+- Extension: a handful of smoke tests (activation, tree view loads, command runs against a fixture).
+
+## Security
+
+- Never pass spec content to a shell unescaped. Spawn processes with argument arrays, never a command string.
+- The tool does not store API keys. Authentication is the harness's job.
+- The extension asks before running a task, unless the user opted out in settings.

@@ -1,0 +1,23 @@
+version: 1
+
+specsDir: .specs
+
+harness:
+  default: claude-code
+  claude-code:
+    # Passed through to the harness. Leave empty to use the harness defaults.
+    extraArgs: []
+
+ids:
+  requirement: R
+  task: T
+
+commit:
+  mode: staged        # staged | auto
+  trailers: true
+
+drift:
+  llm: false          # optional second pass through the harness
+  ignore:
+    - "**/*.md"
+    - "**/__snapshots__/**"
