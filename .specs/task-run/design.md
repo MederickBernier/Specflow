@@ -92,13 +92,13 @@ Both streams are buffered without limit as soon as the process starts, so a call
 
 ## Claude Code adapter
 
-- Spawn the `claude` binary in print mode with streaming JSON output, passing the prompt on stdin and arguments as an array (no shell).
-- Read stdout line by line, parse each line as JSON, map to `RunEvent`.
-- `file-changed` events come from the harness's edit and write tool calls; after exit, a `git status` diff fills any gaps.
-- `usage` comes from the final result event.
-- Cancellation: on abort, send SIGTERM, then SIGKILL after 5 seconds.
-- Pin a tested version range of Claude Code. `check()` warns, but does not fail, outside the range.
-- Exact flags and event field names are verified in a spike (task T1) and recorded in `fixtures/streams/`.
+- Spawn `claude -p --output-format stream-json --verbose --permission-mode acceptEdits`, then `extraArgs`, passing the prompt on stdin and arguments as an array (no shell). Do not pass flags that skip the user's own settings, permissions or MCP servers.
+- Read stdout line by line, parse each line as JSON, map to `RunEvent`. The mapping table is in `docs/spikes/claude-code-headless.md`.
+- `file-changed` events come from the `user` tool-result lines of Write and Edit. The model also changes files through Bash, so after exit a `git status` pass is required to report the rest.
+- `usage` comes from the final `result` line. Tool denials (`system/permission_denied`) become non-fatal `error` events: a run can end `success` with a denied tool.
+- Cancellation: on abort, send SIGTERM, then SIGKILL after 5 seconds. Claude Code prints no `result` when killed, so the adapter emits the cancelled `finished` itself.
+- Pin a tested version range of Claude Code (`>=2.1.0 <3`). `check()` warns, but does not fail, outside the range, and reads `loggedIn` from `claude auth status --json`.
+- Flags and event fields were verified in the spike (task T1, `docs/spikes/claude-code-headless.md`) against 2.1.310 and recorded in `fixtures/streams/`.
 
 ## Prompt template
 

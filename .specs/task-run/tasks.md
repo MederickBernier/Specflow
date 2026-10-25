@@ -1,8 +1,8 @@
 # task-run: tasks
 
 ## T1: Spike Claude Code headless output [R4]
-status: todo
-files: fixtures/streams/*.jsonl, docs/spikes/claude-code-headless.md
+status: done
+files: fixtures/streams/*.jsonl, fixtures/streams/sanitize.ts, docs/spikes/claude-code-headless.md
 depends: core-spec-model/T1
 
 Run Claude Code headless on two toy tasks (one success, one failure), save the raw streams as fixtures and note the flags and event fields used.
