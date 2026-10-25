@@ -1,0 +1,10 @@
+{"kind":"started","runId":"run-success","harness":"replay","at":"2026-01-01T00:00:00Z"}
+{"kind":"message","role":"assistant","text":"I'll add the lockout counter to the login handler."}
+{"kind":"tool-call","tool":"Edit","summary":"src/auth/login.ts"}
+{"kind":"file-changed","path":"src/auth/login.ts","change":"modified"}
+{"kind":"tool-call","tool":"Write","summary":"src/auth/lockout.ts"}
+{"kind":"file-changed","path":"src/auth/lockout.ts","change":"added"}
+{"kind":"command","command":"pnpm test","exitCode":0}
+{"kind":"usage","inputTokens":12400,"outputTokens":1830,"costUsd":0.0712,"durationMs":48250}
+{"kind":"message","role":"assistant","text":"The sixth failed attempt now locks the account for 15 minutes."}
+{"kind":"finished","ok":true,"summary":"Added lockout counter"}

@@ -82,6 +82,14 @@ Both streams are buffered without limit as soon as the process starts, so a call
 
 `Git` stays deliberately thin: typed helpers (`status`, `stage`, `commit`, `log`, `isAncestor`) are plain functions in `core` built on `run` and `lines`, so their parsing is unit tested without a real repo.
 
+## Replay adapter
+
+- `ReplayAdapter` takes events directly or a `.jsonl` file (one `RunEvent` per line) read through the injected `FileSystem` when the run starts. `parseEventStream` validates each line and names the line on error.
+- Events are replayed as recorded, even a malformed sequence, so runner robustness can be tested. Aborting stops the replay with `finished { ok: false, cancelled: true }`, synthesizing `started` first if none was emitted.
+- An unreadable or invalid file becomes `started`, a fatal `error` and `finished { ok: false }`; `check()` reports it as `failed`.
+- Optional `delayMs` between events, through an injectable `sleep`. Each `RunInput` is kept in `inputs` for assertions.
+- Shared normalized streams for runner and UI tests live in `fixtures/events/` (`success.jsonl`, `failure.jsonl`), apart from raw harness recordings in `fixtures/streams/`.
+
 ## Claude Code adapter
 
 - Spawn the `claude` binary in print mode with streaming JSON output, passing the prompt on stdin and arguments as an array (no shell).

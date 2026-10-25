@@ -1,0 +1,5 @@
+{"kind":"started","runId":"run-failure","harness":"replay","at":"2026-01-01T00:00:00Z"}
+{"kind":"message","role":"assistant","text":"Running the tests first."}
+{"kind":"command","command":"pnpm test","exitCode":1}
+{"kind":"error","message":"Tests fail before any change; stopping.","fatal":true}
+{"kind":"finished","ok":false,"summary":"Stopped: failing tests"}

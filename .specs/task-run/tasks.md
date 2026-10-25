@@ -15,8 +15,8 @@ depends: core-spec-model/T3
 Types compile, a registry resolves adapters by name, an unknown name returns the list of known adapters.
 
 ## T3: Replay adapter [R9]
-status: todo
-files: packages/core/src/run/replay-adapter.ts
+status: done
+files: packages/core/src/run/replay-adapter.ts, fixtures/events/*.jsonl
 depends: T2
 
 Replays a `.jsonl` stream of `RunEvent`s with optional delay; used by all runner and UI tests.
