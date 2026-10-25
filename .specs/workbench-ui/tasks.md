@@ -43,8 +43,8 @@ depends: T1, T5
 Unified and split layouts with line numbers, placeholders for binary and too-large files, layout choice remembered.
 
 ## T7: Review tab [R4]
-status: todo
-files: packages/vscode/webview/review.tsx, packages/vscode/src/workbench/actions.ts, packages/vscode/src/workbench/state.ts, packages/vscode/src/workbench/panel.ts
+status: done
+files: packages/vscode/webview/**, packages/vscode/src/workbench/actions.ts, packages/vscode/src/workbench/protocol.ts, packages/vscode/src/workbench/panel.ts, packages/vscode/src/extension.ts
 depends: T2, T6, vscode-extension/T7
 
 A staged run's files, counts, scope marks, spec notes and inline diffs show, update on edit, and accept or discard through the existing commands; idle, the working tree diff shows read only.

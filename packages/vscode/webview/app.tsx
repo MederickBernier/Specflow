@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { isWorkbenchTab, type WorkbenchTab, workbenchTabs } from "../src/workbench/html.ts";
 import type { WorkbenchCommand, WorkbenchState } from "../src/workbench/protocol.ts";
 import { Board, type TaskRef } from "./board.tsx";
+import { useDiffLayout } from "./diff-view.tsx";
+import { useDiffs } from "./diffs.ts";
+import { Review } from "./review.tsx";
 import { type FeatureRef, Overview } from "./overview.tsx";
 import type { WebviewApi } from "./vscode-api.ts";
 
@@ -24,6 +27,8 @@ export function App({ api, initialTab, state }: { api: WebviewApi; initialTab?: 
   const saved = api.getState()?.tab;
   const [tab, setTab] = useState<WorkbenchTab>(isWorkbenchTab(saved) ? saved : (initialTab ?? "overview"));
   const [filter, setFilter] = useState<FeatureRef | undefined>(api.getState()?.filter);
+  const diffs = useDiffs(api, state?.revision);
+  const [layout, setLayout] = useDiffLayout(api);
   const tabRefs = useRef<Partial<Record<WorkbenchTab, HTMLButtonElement | null>>>({});
 
   const select = (next: WorkbenchTab, focus = false) => {
@@ -105,6 +110,15 @@ export function App({ api, initialTab, state }: { api: WebviewApi; initialTab?: 
           <Overview state={state} onOpenFeature={openFeature} onCommand={command} />
         ) : tab === "board" ? (
           <Board state={state} {...(filter && { filter })} onFilter={saveFilter} onRun={run} onOpen={open} />
+        ) : tab === "review" ? (
+          <Review
+            state={state}
+            diffs={diffs}
+            layout={layout}
+            onLayout={setLayout}
+            onCommand={command}
+            onOpenNative={(path) => api.postMessage({ type: "openDiff", path })}
+          />
         ) : (
           <p class="empty">{labels[tab].empty}</p>
         )}

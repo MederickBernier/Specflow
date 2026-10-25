@@ -73,7 +73,7 @@ export class WorkbenchPanel implements vscode.Disposable, vscode.WebviewPanelSer
     const tab = isWorkbenchTab(options.tab) ? options.tab : undefined;
     if (this.#panel) {
       this.#panel.reveal();
-      if (tab) this.#send({ type: "show", tab });
+      if (tab) this.send({ type: "show", tab });
       return this.#panel;
     }
     const panel = vscode.window.createWebviewPanel(workbenchViewType, "Specflow", vscode.ViewColumn.Active, this.#options());
@@ -125,10 +125,11 @@ export class WorkbenchPanel implements vscode.Disposable, vscode.WebviewPanelSer
   #postState(): void {
     if (!this.#panel) return;
     this.#state = buildWorkbenchState(this.#inputs(), ++this.#revision);
-    this.#send({ type: "state", state: this.#state });
+    this.send({ type: "state", state: this.#state });
   }
 
-  #send(message: HostMessage): void {
+  /** Posts a message to the open page, if any. */
+  send(message: HostMessage): void {
     void this.#panel?.webview.postMessage(message);
   }
 

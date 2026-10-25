@@ -66,6 +66,19 @@ const explorer = new SpecExplorer(() =>
   })),
 );
 
+/** Calls `changed` when a file of the run under review is created, changed or deleted on disk. */
+function reviewWatcher(changed: () => void): vscode.Disposable {
+  const watcher = vscode.workspace.createFileSystemWatcher("**/*");
+  const onFile = (uri: vscode.Uri) => {
+    const pending = review.pending;
+    if (pending && pending.recording.files.some((file) => `${pending.tree.root}/${file}` === corePath(uri))) changed();
+  };
+  watcher.onDidCreate(onFile);
+  watcher.onDidChange(onFile);
+  watcher.onDidDelete(onFile);
+  return watcher;
+}
+
 /** What the workbench shows, gathered from the services, insights, runs and review. */
 function workbenchInputs(): WorkbenchInputs {
   const pending = review.pending;
@@ -116,7 +129,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<Specfl
     review.onDidChangeTreeData(changed),
     runs.onDidChange(changed),
     onDidCheckHarness(changed),
-    panel.onDidRequest((intent) => void handleIntent(intent)),
+    panel.onDidRequest(
+      (intent) =>
+        void handleIntent(intent, {
+          git,
+          fs,
+          reviewFiles: () => review.pending?.recording.files ?? [],
+          send: (message) => panel.send(message),
+        }),
+    ),
+    // workbench-ui/R4: editing a file under review updates its diff in the workbench.
+    reviewWatcher(() => panel.changed()),
     vscode.window.registerWebviewPanelSerializer(workbenchViewType, panel),
     vscode.commands.registerCommand("specflow.openWorkbench", (options?: OpenWorkbenchOptions) => {
       panel.open(options);

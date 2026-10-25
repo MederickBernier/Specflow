@@ -1,3 +1,4 @@
+import type { FileDiff } from "@specflow/core";
 import { z } from "zod";
 import { workbenchTabs, type WorkbenchTab } from "./html.js";
 
@@ -70,14 +71,28 @@ export type WorkbenchState = {
   review?: ReviewView;
 };
 
+/** What a diff request names; the answer repeats it, so the page can match the two. */
+export type DiffRequest = { source: "review" | "working" | "commit"; root: string; path?: string; commit?: string };
+
+/** The extension's answer to a diff request, for the state revision the page had when it asked. */
+export type DiffAnswer = DiffRequest & { revision: number } & ({ files: FileDiff[]; truncated: boolean } | { error: string });
+
+/** The cache key of a diff request. */
+export function diffKey(request: DiffRequest): string {
+  return JSON.stringify([request.source, request.root, request.path ?? null, request.commit ?? null]);
+}
+
 /** Messages the extension posts to the workbench page. */
-export type HostMessage = { type: "state"; state: WorkbenchState } | { type: "show"; tab: WorkbenchTab };
+export type HostMessage = { type: "state"; state: WorkbenchState } | { type: "show"; tab: WorkbenchTab } | ({ type: "diff" } & DiffAnswer);
 
 /** Commands the page may run, by the name it uses: no others, and never with arguments. */
 export const workbenchCommands = {
   checkDrift: "specflow.checkDrift",
   checkHarness: "specflow.checkHarness",
   showProblems: "workbench.actions.view.problems",
+  acceptRun: "specflow.acceptRun",
+  discardRun: "specflow.discardRun",
+  refresh: "specflow.refresh",
 } as const;
 export type WorkbenchCommand = keyof typeof workbenchCommands;
 
@@ -104,6 +119,7 @@ const pageMessage = z.discriminatedUnion("type", [
     root: name,
     path: z.string().min(1).max(4096).optional(),
     commit: z.string().regex(/^[0-9a-f]{7,64}$/).optional(),
+    revision: z.number().int().nonnegative(),
   }),
 ]);
 
@@ -124,8 +140,10 @@ export function parsePageMessage(raw: unknown, state: WorkbenchState | undefined
     case "ready":
     case "tab":
     case "rendered":
-    case "command":
       return message;
+    case "command":
+      // Accept and discard only mean something while a run is under review.
+      return (message.command === "acceptRun" || message.command === "discardRun") && !state?.review ? undefined : message;
     case "run": {
       const task = findFeature(state, message.root, message.feature)?.tasks.find((t) => t.id === message.task);
       return task ? message : undefined;

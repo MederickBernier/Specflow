@@ -329,6 +329,56 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
     assert.equal(editor.document.lineAt(editor.selection.active.line).text, "## R2: Lock out after failed attempts");
   });
 
+  // workbench-ui/R4: the page asks for the run's diff, sees edits made during review, and accepts it.
+  test("reviews a run inline in the workbench and accepts it", async () => {
+    type Answer = { type: string; source?: string; files?: { path: string; hunks: { lines: { text: string }[] }[] }[] };
+    type Workbench = {
+      state?: { revision: number; roots: { root: string }[]; review?: { files: { path: string }[] } };
+      receive: (message: unknown) => unknown;
+      send: (message: unknown) => void;
+    };
+    const api = extension().exports as Api & { workbench: Workbench; review: Review };
+    const sent: Answer[] = [];
+    const send = api.workbench.send.bind(api.workbench);
+    api.workbench.send = (message) => {
+      sent.push(message as Answer);
+      send(message);
+    };
+    const root = vscode.workspace.workspaceFolders![0]!.uri;
+    const loginText = (answer: Answer | undefined) =>
+      answer?.files?.find((f) => f.path === "src/auth/login.ts")?.hunks.flatMap((h) => h.lines.map((l) => l.text)).join("\n") ?? "";
+    const lastReview = () => sent.filter((m) => m.type === "diff" && m.source === "review").at(-1);
+    try {
+      api.registry.register(writer("smoke-workbench", "export const login = () => 'from the workbench';\n"));
+      await withRunSettings(async () => {
+        await vscode.workspace.getConfiguration("specflow").update("harness", "smoke-workbench", vscode.ConfigurationTarget.Global);
+        api.workbench.receive({ type: "run", root: api.workbench.state!.roots[0]!.root, feature: "accounts", task: "T3" });
+        await eventually(() => api.review.pending !== undefined && api.workbench.state?.review !== undefined, "the run to be under review");
+      });
+
+      await vscode.commands.executeCommand("specflow.openWorkbench", { tab: "review" });
+      await eventually(() => loginText(lastReview()).includes("from the workbench"), "the page to get the run's diff");
+      // An earlier test committed lockout.ts and T3 is already done, so only login.ts differs from HEAD.
+      assert.deepEqual(lastReview()!.files!.map((f) => f.path), ["src/auth/login.ts"]);
+      assert.equal(api.workbench.state!.review!.files.length, 3);
+
+      await vscode.workspace.fs.writeFile(vscode.Uri.joinPath(root, "src/auth/login.ts"), new TextEncoder().encode("export const login = () => 'edited in review';\n"));
+      await eventually(() => loginText(lastReview()).includes("edited in review"), "the diff to follow the edit");
+
+      assert.ok(api.workbench.receive({ type: "command", command: "acceptRun" }));
+      await eventually(() => api.review.pending === undefined, "the run to be accepted");
+      assert.equal(await gitIn("log", "-1", "--format=%(trailers:key=Spec-Task,valueonly)"), "T3\n\n");
+      assert.match(await gitIn("show", "HEAD:src/auth/login.ts"), /edited in review/);
+      await eventually(() => api.workbench.state?.review === undefined, "the workbench state to drop the review");
+      assert.equal(api.workbench.receive({ type: "command", command: "acceptRun" }), undefined, "nothing left to accept");
+
+      // Idle, the tab shows the working tree, read only.
+      await eventually(() => sent.some((m) => m.type === "diff" && m.source === "working"), "the page to ask for the working tree");
+    } finally {
+      api.workbench.send = send;
+    }
+  });
+
   // workbench-ui/R1: a spec change reaches the open page within 1 second; the page renders what it was sent.
   test("keeps the open workbench current and drops messages it cannot verify", async () => {
     const api = (extension().exports as { workbench: WorkbenchApi }).workbench;

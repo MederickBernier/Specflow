@@ -41,7 +41,22 @@ describe("parsePageMessage (workbench-ui/R1)", () => {
       checkDrift: "specflow.checkDrift",
       checkHarness: "specflow.checkHarness",
       showProblems: "workbench.actions.view.problems",
+      acceptRun: "specflow.acceptRun",
+      discardRun: "specflow.discardRun",
+      refresh: "specflow.refresh",
     });
+  });
+
+  it("accepts Accept and Discard only while a run is under review", () => {
+    expect(parsePageMessage({ type: "command", command: "acceptRun" }, state)).toBeDefined();
+    expect(parsePageMessage({ type: "command", command: "discardRun" }, state)).toBeDefined();
+    const idle = { ...state, review: undefined } as WorkbenchState;
+    expect(parsePageMessage({ type: "command", command: "acceptRun" }, idle)).toBeUndefined();
+    expect(parsePageMessage({ type: "command", command: "discardRun" }, idle)).toBeUndefined();
+  });
+
+  it("needs the revision a diff was asked for", () => {
+    expect(parsePageMessage({ type: "diff", source: "working", root: "/repo" }, state)).toBeUndefined();
   });
 
   it("drops malformed messages", () => {
@@ -80,23 +95,23 @@ describe("parsePageMessage (workbench-ui/R1)", () => {
     expect(parsePageMessage({ type: "openDiff", path: "src/a.ts" }, state)).toBeDefined();
     expect(parsePageMessage({ type: "openDiff", path: "../../etc/passwd" }, state)).toBeUndefined();
     expect(parsePageMessage({ type: "openDiff", path: "src/a.ts" }, { ...state, review: undefined } as WorkbenchState)).toBeUndefined();
-    expect(parsePageMessage({ type: "diff", source: "review", root: "/repo" }, state)).toBeDefined();
-    expect(parsePageMessage({ type: "diff", source: "review", root: "/repo", path: "src/a.ts" }, state)).toBeDefined();
-    expect(parsePageMessage({ type: "diff", source: "review", root: "/repo", path: "src/other.ts" }, state)).toBeUndefined();
-    expect(parsePageMessage({ type: "diff", source: "review", root: "/repo", commit: "abc1234" }, state)).toBeUndefined();
+    expect(parsePageMessage({ type: "diff", source: "review", root: "/repo", revision: 3 }, state)).toBeDefined();
+    expect(parsePageMessage({ type: "diff", source: "review", root: "/repo", path: "src/a.ts", revision: 3 }, state)).toBeDefined();
+    expect(parsePageMessage({ type: "diff", source: "review", root: "/repo", path: "src/other.ts", revision: 3 }, state)).toBeUndefined();
+    expect(parsePageMessage({ type: "diff", source: "review", root: "/repo", commit: "abc1234", revision: 3 }, state)).toBeUndefined();
   });
 
   it("accepts the whole working tree, but no single path the state does not show", () => {
-    expect(parsePageMessage({ type: "diff", source: "working", root: "/repo" }, state)).toBeDefined();
-    expect(parsePageMessage({ type: "diff", source: "working", root: "/repo", path: "src/a.ts" }, state)).toBeUndefined();
-    expect(parsePageMessage({ type: "diff", source: "working", root: "/elsewhere" }, state)).toBeUndefined();
+    expect(parsePageMessage({ type: "diff", source: "working", root: "/repo", revision: 3 }, state)).toBeDefined();
+    expect(parsePageMessage({ type: "diff", source: "working", root: "/repo", path: "src/a.ts", revision: 3 }, state)).toBeUndefined();
+    expect(parsePageMessage({ type: "diff", source: "working", root: "/elsewhere", revision: 3 }, state)).toBeUndefined();
   });
 
   it("accepts commits the state shows, and only as hashes", () => {
-    expect(parsePageMessage({ type: "diff", source: "commit", root: "/repo", commit: "abc1234" }, state)).toBeDefined();
-    expect(parsePageMessage({ type: "diff", source: "commit", root: "/repo", commit: "def5678" }, state)).toBeUndefined();
-    expect(parsePageMessage({ type: "diff", source: "commit", root: "/repo", commit: "HEAD~1" }, state)).toBeUndefined();
-    expect(parsePageMessage({ type: "diff", source: "commit", root: "/repo", commit: "--output=/tmp/x" }, state)).toBeUndefined();
-    expect(parsePageMessage({ type: "diff", source: "commit", root: "/repo" }, state)).toBeUndefined();
+    expect(parsePageMessage({ type: "diff", source: "commit", root: "/repo", commit: "abc1234", revision: 3 }, state)).toBeDefined();
+    expect(parsePageMessage({ type: "diff", source: "commit", root: "/repo", commit: "def5678", revision: 3 }, state)).toBeUndefined();
+    expect(parsePageMessage({ type: "diff", source: "commit", root: "/repo", commit: "HEAD~1", revision: 3 }, state)).toBeUndefined();
+    expect(parsePageMessage({ type: "diff", source: "commit", root: "/repo", commit: "--output=/tmp/x", revision: 3 }, state)).toBeUndefined();
+    expect(parsePageMessage({ type: "diff", source: "commit", root: "/repo", revision: 3 }, state)).toBeUndefined();
   });
 });

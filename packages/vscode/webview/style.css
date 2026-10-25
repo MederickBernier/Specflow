@@ -523,3 +523,75 @@ table.diff tr.hunk-header td {
 .no-newline {
   color: var(--vscode-editorWarning-foreground);
 }
+
+/* Review (workbench-ui/R4) */
+
+.review-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 12px;
+}
+
+.review-title {
+  flex: 1;
+}
+
+.scope-warning {
+  padding: 6px 10px;
+  border-left: 3px solid var(--vscode-editorWarning-foreground);
+  background: var(--vscode-inputValidation-warningBackground, transparent);
+}
+
+.spec-notes {
+  margin: 12px 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--vscode-textLink-foreground);
+  background: var(--vscode-textBlockQuote-background);
+}
+
+.spec-notes h2 {
+  margin: 0 0 4px;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.spec-notes ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.review-files {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+}
+
+.review-files li {
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+.review-files li.selected {
+  background: var(--vscode-list-activeSelectionBackground);
+  color: var(--vscode-list-activeSelectionForeground);
+}
+
+button.link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--vscode-textLink-foreground);
+  font-family: var(--vscode-editor-font-family);
+  cursor: pointer;
+}
+
+button.link:hover {
+  text-decoration: underline;
+}
+
+.out-of-scope {
+  color: var(--vscode-editorWarning-foreground);
+  font-size: 0.9em;
+}
