@@ -32,6 +32,9 @@ The prompt sent to the harness contains everything the agent needs and nothing i
 - Given task `T2` referencing `R3`
 - When the prompt is built
 - Then it includes the steering files, the task text, the full text of each referenced requirement, the feature's `design.md`, and the instruction to work on this task only
+- And it lists the IDs and titles of the feature's other tasks that are not `done`, marked out of scope
+- And it tells the harness not to edit files under the specs folder, because specflow updates the task's status
+- And it asks the harness to end its final reply with a `Spec notes:` section when it found problems in the spec or made decisions the spec does not cover
 - And it does not include other features' specs
 
 ## R4: Claude Code adapter
@@ -61,6 +64,7 @@ After a successful run, changes are recorded with spec trailers.
 
 - Given `commit.mode: staged`, then changed files are staged and a prepared commit message with trailers is returned, nothing is committed
 - Given `commit.mode: auto`, then a commit is created with the trailers `Spec-Feature`, `Spec-Task`, `Spec-Req`
+- And the commit body is the first paragraph of the run's final summary, without its spec notes
 - Given a failed or cancelled run, then nothing is staged or committed
 
 ## R7: Update task status
@@ -72,6 +76,7 @@ status: approved
 - Given the run fails or is cancelled, then it returns to its previous status
 - Given a staged result is discarded, then it returns to its previous status
 - And no other line in `tasks.md` changes
+- And specflow is the only writer of the status line: the harness is told not to edit it
 
 ## R8: Trace a requirement or task
 priority: must
@@ -99,3 +104,28 @@ status: approved
 - Given uncommitted changes in files outside `.specs/`
 - When a run is requested
 - Then it refuses with the list of dirty files, unless `--allow-dirty` is passed
+
+## R11: Flag changes outside the task
+priority: should
+status: approved
+
+Changes the task did not plan are flagged after the run, never silently recorded or reverted. Code written for another task would otherwise be traced to the wrong requirement.
+
+- Given a task with a `files:` list of paths or globs
+- When the run changes a file that matches none of them
+- Then the result lists it as out of scope and `run` prints a warning naming it
+- Given the harness changed a file under the specs folder
+- Then the result lists it as a spec edit, it is left out of the recording so it stays unstaged for review, and `run` prints a warning naming it
+- And the feature's `tasks.md` is still recorded with the status change
+- And a task without `files:` gets no out-of-scope check
+
+## R12: Surface the agent's spec notes
+priority: should
+status: approved
+
+The harness can suggest spec changes; humans decide whether to make them.
+
+- Given the run's final reply ends with a `Spec notes:` section
+- When the run finishes
+- Then `run` prints the notes separately after the result, and `--json` includes them as `specNotes`
+- And the notes are not part of the commit message

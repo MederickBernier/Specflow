@@ -83,3 +83,31 @@ files: packages/core/src/git.ts, packages/core/src/spawner.ts, packages/core/src
 depends: core-spec-model/T3
 
 Interfaces from the design compile; Node implementations in `core/node` pass an integration test against a temp git repo; in-memory fakes exist for tests. No other `core` module imports `core/node`.
+
+## T13: Prompt scope, status ownership and spec notes request [R3, R7]
+status: todo
+files: packages/core/src/run/prompt.ts
+depends: T4
+
+The prompt lists the feature's other open tasks as out of scope, forbids spec edits because specflow owns the status line, and asks for a `Spec notes:` section; snapshot updated.
+
+## T14: Spec notes and a short commit body [R6, R12]
+status: todo
+files: packages/core/src/run/spec-notes.ts, packages/core/src/run/recorder.ts
+depends: T7
+
+`extractSpecNotes` handles headings, bold, inline first notes and continuation lines; the recorder's body is the first paragraph of the summary without notes.
+
+## T15: Scope check [R11]
+status: todo
+files: packages/core/src/run/scope.ts, packages/core/src/glob.ts
+depends: T5
+
+`checkScope` sorts changed files into spec edits and out-of-scope files using the task's `files:` globs.
+
+## T16: Run reports scope and spec notes [R11, R12]
+status: todo
+files: packages/cli/src/commands/run.ts
+depends: T10, T13, T14, T15
+
+`run` leaves spec edits out of the recording, prints scope warnings and spec notes after the result, and adds `outOfScope`, `specEdits` and `specNotes` to the `--json` result.

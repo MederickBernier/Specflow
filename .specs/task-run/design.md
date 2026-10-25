@@ -143,8 +143,15 @@ Both streams are buffered without limit as soon as the process starts, so a call
 {feature design.md}
 </design>
 
-Work on this task only. Do not edit files under {specsDir}/ except to set this task's status.
+<out-of-scope>
+Other open tasks in this feature, each done in its own run:
+- {id}: {title}
+</out-of-scope>
+
+Work on this task only; leave the out-of-scope tasks for their own runs.
+Do not edit files under {specsDir}/; specflow updates this task's status.
 If the design cannot work as written, stop and explain why.
+If you found problems in the spec or made decisions it does not cover, end your final reply with a "Spec notes:" section listing them as bullets.
 ```
 
 Template lives in `core/src/run/prompt.ts` (`buildTaskPrompt(fs, tree, { feature, task })`) and is snapshot tested.
@@ -153,16 +160,30 @@ Template lives in `core/src/run/prompt.ts` (`buildTaskPrompt(fs, tree, { feature
 - A requirement referenced in another feature (`other/R1`) is included; that feature's design and other requirements are not.
 - Missing steering or design files and empty sections are left out.
 - An unknown task or referenced requirement returns an error instead of a partial prompt.
+- `<out-of-scope>` lists only IDs and titles of the feature's other tasks that are not `done`, and is left out when there are none. Other features' tasks are never listed.
 
 ## Recording
 
 - `recordRun(deps, tree, { feature, task }, { ok, cancelled, summary, files })`; `changedFiles(events)` collects `files` from `file-changed` events.
 - Trailers are appended by running `git interpret-trailers`: a blank line, then `Key: value` lines. A task with `[]` gets `Spec-Req: none`. `commit.trailers: false` leaves them out.
-- Commit subject comes from the task title: `feat({feature}): {task title}`; `finished.summary`, when present, is the body.
+- Commit subject comes from the task title: `feat({feature}): {task title}`. The body is the first paragraph of `finished.summary` after removing its spec notes (see Spec notes), or none.
 - Files are staged with `git add -A -- :(literal)<path>...`, so deletions are recorded and names with `*` or `[` are never globs.
 - In `staged` mode the prepared message is written to `<git dir>/SPECFLOW_MSG` (from `git rev-parse --absolute-git-dir`) and returned, so the user can commit with `git commit -F`.
 - In `auto` mode the commit uses the same pathspecs (`git commit -F - -- <paths>`), so only the run's files are committed and anything the user had staged stays staged.
 - A failed or cancelled run, or a successful one with no changed files, touches nothing and returns `{ mode: "skipped", reason }`.
+
+## Spec notes
+
+`extractSpecNotes(text)` splits a final reply at its first line that reads `Spec notes:` (any case, optionally as a markdown heading or in bold, optionally with the first note on the same line). It returns `{ notes, summary }`: `notes` are the bullet items after the heading (continuation lines joined), `summary` the text before it. The recorder uses `summary` for the commit body; `run` prints `notes` after the result and includes them in `--json` as `specNotes`. Nothing is written to `.specs/`.
+
+## Scope check
+
+`checkScope(tree, task, files)` sorts a run's changed files (relative to the spec root) into:
+
+- `specEdits`: files under `specsDir/`. They are left out of the recording; the feature's `tasks.md` is recorded anyway because specflow's status change lives there.
+- `outOfScope`: other files that match none of the task's `files:` patterns. Empty when the task has no `files:`. They are still recorded, since the review sees them in the diff.
+
+Patterns are globs relative to the spec root: `*` and `?` stay within one path segment, `**` spans segments, and a pattern ending in `/` matches everything below it. `run` prints one warning per list after the result and adds both lists to its `--json` result.
 
 ## Status updates
 
@@ -170,6 +191,7 @@ A targeted line edit on the task's `status:` line using the location from the sp
 
 - `setTaskStatus(fs, tree, target, status)` re-reads and re-parses `tasks.md` first, since the harness may have edited it, and changes only the value, keeping the key's spacing, trailing whitespace and the line ending.
 - It returns a `StatusSnapshot` of the original line (`null` when there was none). `restoreTaskStatus` puts that line back, or removes the inserted one, so a failed, cancelled or discarded run leaves the file byte-identical.
+- The prompt tells the harness specflow owns the status line, so the only writer is specflow; a harness edit to `tasks.md` shows up as a spec edit.
 - The shell sets `doing` before the run and `done` before recording, passing `tasksFile(tree, feature)` in the recorder's `files` so the edit is staged or committed with the run's changes; on failure it restores the snapshot.
 
 ## Trace
