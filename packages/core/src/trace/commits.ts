@@ -21,16 +21,17 @@ const fieldSeparator = "\x1f";
 const trailerSeparator = "\x1d";
 const recordSeparator = "\x1e";
 
-/** Arguments for one `git log` call over every commit with spec trailers, newest first. */
-export const traceLogArgs = [
+/** Arguments for one `git log` call over every commit, newest first, with files and spec trailers. */
+export const historyLogArgs = [
   "log",
   "-z",
   "--name-status",
   "-M",
   `--format=${recordSeparator}%H${fieldSeparator}%aI${fieldSeparator}%s${fieldSeparator}%(trailers:key=Spec-Feature,key=Spec-Task,key=Spec-Req,unfold,separator=%x1d)`,
-  "-E",
-  "--grep=^Spec-(Feature|Task|Req):",
 ];
+
+/** {@link historyLogArgs} restricted to commits that mention a spec trailer key. */
+export const traceLogArgs = [...historyLogArgs, "-E", "--grep=^Spec-(Feature|Task|Req):"];
 
 /**
  * Reads every commit on the current branch whose trailers reference the spec,
@@ -38,17 +39,33 @@ export const traceLogArgs = [
  * survives rebases.
  */
 export async function readTraceCommits(git: Git, cwd: string): Promise<Result<TraceCommit[], GitError>> {
-  const log = await git.run(traceLogArgs, { cwd });
-  if (!log.ok) {
-    // A repository without commits has no history to trace.
-    if (/does not have any commits/.test(log.error.stderr)) return ok([]);
-    return err(log.error);
-  }
-  return ok(parseTraceLog(log.value));
+  const log = await readLog(git, cwd, traceLogArgs);
+  return log.ok ? ok(parseTraceLog(log.value)) : log;
+}
+
+/**
+ * Reads every commit on the current branch, newest first, in one `git log`
+ * call. Commits without trailers have empty `tasks` and `reqs`.
+ */
+export async function readHistory(git: Git, cwd: string): Promise<Result<TraceCommit[], GitError>> {
+  const log = await readLog(git, cwd, historyLogArgs);
+  return log.ok ? ok(parseHistory(log.value)) : log;
+}
+
+async function readLog(git: Git, cwd: string, args: string[]): Promise<Result<string, GitError>> {
+  const log = await git.run(args, { cwd });
+  // A repository without commits has no history.
+  if (!log.ok && /does not have any commits/.test(log.error.stderr)) return ok("");
+  return log;
 }
 
 /** Parses the output of {@link traceLogArgs}. Commits whose trailers name no task or requirement are left out. */
 export function parseTraceLog(output: string): TraceCommit[] {
+  return parseHistory(output).filter((commit) => commit.tasks.length > 0 || commit.reqs.length > 0);
+}
+
+/** Parses the output of {@link historyLogArgs}, keeping every commit. */
+export function parseHistory(output: string): TraceCommit[] {
   const commits: TraceCommit[] = [];
   for (const record of output.split(recordSeparator)) {
     if (record.trim() === "") continue;
@@ -72,8 +89,6 @@ export function parseTraceLog(output: string): TraceCommit[] {
       });
     const tasks = resolve(trailers["Spec-Task"] ?? []);
     const reqs = resolve(trailers["Spec-Req"] ?? []);
-    if (tasks.length === 0 && reqs.length === 0) continue;
-
     commits.push({ hash, date, subject, files: parseNameStatus(rest), features, tasks, reqs });
   }
   return commits;

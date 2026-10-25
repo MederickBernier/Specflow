@@ -8,8 +8,8 @@ depends: core-spec-model/T2, task-run/T7
 One fixture per rule, plus a clean one, plus an acked one, plus one where an out-of-scope file must not widen the touched set. Each fixture's expected findings are written next to it as JSON.
 
 ## T2: TraceIndex and file history [R1, R4]
-status: todo
-files: packages/core/src/drift/index.ts
+status: done
+files: packages/core/src/drift/index.ts, packages/core/src/trace/commits.ts
 depends: task-run/T9
 
 Built from a single `git log` stream, respects `drift.ignore`.
