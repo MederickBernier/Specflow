@@ -46,3 +46,5 @@ export type { RunEvent } from "./run/events.js";
 export { eventSequenceProblems, parseRunEvent, runEventKinds } from "./run/events.js";
 export type { ReplayOptions, ReplaySource, Sleep } from "./run/replay-adapter.js";
 export { parseEventStream, ReplayAdapter } from "./run/replay-adapter.js";
+export type { PromptError } from "./run/prompt.js";
+export { buildTaskPrompt } from "./run/prompt.js";

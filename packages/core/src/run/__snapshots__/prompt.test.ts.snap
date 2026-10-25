@@ -1,0 +1,49 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`buildTaskPrompt > builds the prompt for accounts/T3 on the clean fixture 1`] = `
+"<steering>
+# Product
+
+Name: **shopfront**. A small web shop used as a specflow test fixture.
+
+## Users
+
+- Shoppers who sign in and pay for orders.
+
+# Tech
+
+- TypeScript, Node 22
+- Source lives under \`src/\`
+</steering>
+
+<task id="accounts/T3">
+## T3: Add lockout counter [R2]
+status: todo
+files: src/auth/login.ts, src/auth/lockout.ts
+depends: T2
+
+Sixth attempt is refused for 15 minutes.
+</task>
+
+<requirements>
+<requirement id="accounts/R2">
+## R2: Lock out after failed attempts
+priority: should
+status: approved
+
+- Given five failed sign-in attempts
+- When a sixth attempt is made
+- Then the account is locked for 15 minutes
+</requirement>
+</requirements>
+
+<design>
+# accounts: design
+
+Sessions are signed cookies. The lockout counter lives in memory, keyed by email.
+</design>
+
+Work on this task only. Do not edit files under .specs/ except to set this task's status.
+If the design cannot work as written, stop and explain why.
+"
+`;

@@ -22,7 +22,7 @@ depends: T2
 Replays a `.jsonl` stream of `RunEvent`s with optional delay; used by all runner and UI tests.
 
 ## T4: Prompt builder [R3]
-status: todo
+status: done
 files: packages/core/src/run/prompt.ts
 depends: T2, core-spec-model/T7
 

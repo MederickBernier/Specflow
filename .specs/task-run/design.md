@@ -113,18 +113,25 @@ Both streams are buffered without limit as soon as the process starts, so a call
 </task>
 
 <requirements>
+<requirement id="{feature}/{id}">
 {each referenced requirement, full text}
+</requirement>
 </requirements>
 
 <design>
 {feature design.md}
 </design>
 
-Work on this task only. Do not edit files under .specs/ except to set this task's status.
+Work on this task only. Do not edit files under {specsDir}/ except to set this task's status.
 If the design cannot work as written, stop and explain why.
 ```
 
-Template lives in `core/src/run/prompt.ts` and is snapshot tested.
+Template lives in `core/src/run/prompt.ts` (`buildTaskPrompt(fs, tree, { feature, task })`) and is snapshot tested.
+
+- Task and requirement text is copied from the source files by line range, metadata included.
+- A requirement referenced in another feature (`other/R1`) is included; that feature's design and other requirements are not.
+- Missing steering or design files and empty sections are left out.
+- An unknown task or referenced requirement returns an error instead of a partial prompt.
 
 ## Recording
 
