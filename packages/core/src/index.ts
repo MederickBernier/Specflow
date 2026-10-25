@@ -67,3 +67,5 @@ export type { ScopeReport } from "./run/scope.js";
 export { checkScope } from "./run/scope.js";
 export type { DriftIndex, RequirementIndex } from "./drift/index.js";
 export { buildDriftIndex } from "./drift/index.js";
+export type { SpecChange } from "./drift/spec-history.js";
+export { lastSpecChange } from "./drift/spec-history.js";

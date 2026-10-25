@@ -15,7 +15,7 @@ depends: task-run/T9
 Built from a single `git log` stream, respects `drift.ignore`.
 
 ## T3: Spec history per requirement [R2]
-status: todo
+status: done
 files: packages/core/src/drift/spec-history.ts
 depends: T2
 

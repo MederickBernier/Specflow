@@ -15,7 +15,7 @@ Drift findings reuse the `Finding` type from `core-spec-model`, with `rule` valu
 ## Building blocks
 
 - **TraceIndex:** for each requirement, the commits referencing it and the files they touched. Built once per run from `git log`: `readHistory` reads every commit with `--name-status` and trailers in one call (the trace format without `--grep`), and `buildDriftIndex` derives trace commits, touched sets and per-file history from it.
-- **Spec history:** for each requirement, the last commit that changed its text. Found with `git log -L <start>,<end>:<file>` on the requirement's line range, falling back to the file's last change if the range moved. A commit whose only changed lines in the range are `drift-ack:` lines does not count, so acknowledging a finding does not itself raise `spec-changed-since-code`.
+- **Spec history:** for each requirement, the last commit that changed its text. Found with `git log -L <start>,<end>:<file>` on the requirement's line range, falling back to the file's last change if the range moved. A commit whose only changed lines in the range are `drift-ack:` lines does not count, so acknowledging a finding does not itself raise `spec-changed-since-code`. The range comes from parsing the file at `HEAD`, since `-L` line numbers refer to HEAD; uncommitted requirements have no spec history.
 - **File history:** for each file in a requirement's touched set, commits after the requirement's last trace commit, filtered by `drift.ignore`.
 
 ## Rules
