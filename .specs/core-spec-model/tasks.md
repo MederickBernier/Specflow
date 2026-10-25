@@ -49,7 +49,7 @@ depends: T4, T5, T6
 Loading from a nested directory finds the root and returns all features from the clean fixture.
 
 ## T8: Implement lint rules [R5]
-status: todo
+status: done
 files: packages/core/src/lint/**
 depends: T7, T2
 

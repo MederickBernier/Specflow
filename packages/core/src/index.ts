@@ -21,3 +21,5 @@ export { findRoot, loadSpecTree } from "./load.js";
 export type { ParseOptions } from "./parse/items.js";
 export { parseRequirements } from "./parse/requirements.js";
 export { parseTasks } from "./parse/tasks.js";
+export type { LintRule } from "./lint/lint.js";
+export { lint, lintRules } from "./lint/lint.js";

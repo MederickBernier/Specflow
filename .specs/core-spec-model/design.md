@@ -101,6 +101,13 @@ Each rule is a function `(tree: SpecTree) => Finding[]` registered in a list. `m
 | `dependency-cycle` | error |
 | `orphan-requirement` | warning |
 
+- Findings point at the item's heading line. Each has `feature` and, except `malformed-heading`, the item `id`.
+- References and `depends` resolve `R3` in the task's own feature and `other/R3` in `other`.
+- `duplicate-id` checks requirement and task IDs separately and reports every use after the first.
+- `unknown-ref` reports each unknown requirement in a task's bracket list. Unknown `depends` targets are not reported in v1; `dependency-cycle` ignores them.
+- `dependency-cycle` reports one finding per cycle (strongly connected component, or a task depending on itself), on the cycle's first task in tree order, with the path in the message.
+- `orphan-requirement` counts references from tasks in any feature.
+
 ## Config
 
 Validated with zod. Defaults live in one `defaultConfig` constant, merged deeply with the file.
