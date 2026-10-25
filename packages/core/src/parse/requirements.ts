@@ -1,6 +1,6 @@
 import type { List } from "mdast";
 import type { Criterion, Finding, Requirement } from "../model.js";
-import { inlineSource, type ParseOptions, splitItems } from "./items.js";
+import { inlineSource, isOneOf, type ParseOptions, splitItems } from "./items.js";
 
 const priorities = ["must", "should", "could"] as const;
 const statuses = ["draft", "approved", "removed"] as const;
@@ -53,10 +53,6 @@ export function parseRequirements(
   });
 
   return { requirements, findings };
-}
-
-function isOneOf<T extends string>(values: readonly T[], value: string): value is T {
-  return (values as readonly string[]).includes(value);
 }
 
 function capitalize(word: string): string {

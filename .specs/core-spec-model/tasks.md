@@ -35,7 +35,7 @@ depends: T3
 Unit tests cover metadata, criteria, unknown keys and line ranges.
 
 ## T6: Parse tasks files [R2, R4, R8]
-status: todo
+status: done
 files: packages/core/src/parse/tasks.ts
 depends: T3
 

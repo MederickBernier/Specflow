@@ -111,6 +111,11 @@ export function splitList(value: string): string[] {
     .filter((part) => part.length > 0);
 }
 
+/** True when `value` is one of `values`. */
+export function isOneOf<T extends string>(values: readonly T[], value: string): value is T {
+  return (values as readonly string[]).includes(value);
+}
+
 /** Raw markdown of a node's inline content, whitespace collapsed. */
 export function inlineSource(node: { children: RootContent[] | Heading["children"] }, source: string): string {
   const first = node.children[0]?.position?.start.offset;
