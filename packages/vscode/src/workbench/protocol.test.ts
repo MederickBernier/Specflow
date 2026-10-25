@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parsePageMessage, type WorkbenchState } from "./protocol.js";
+import { parsePageMessage, workbenchCommands, type WorkbenchState } from "./protocol.js";
 
 const state: WorkbenchState = {
   revision: 3,
@@ -30,6 +30,18 @@ describe("parsePageMessage (workbench-ui/R1)", () => {
     expect(parsePageMessage({ type: "ready" }, undefined)).toEqual({ type: "ready" });
     expect(parsePageMessage({ type: "tab", tab: "board" }, undefined)).toEqual({ type: "tab", tab: "board" });
     expect(parsePageMessage({ type: "rendered", revision: 3 }, state)).toEqual({ type: "rendered", revision: 3 });
+  });
+
+  it("accepts only the commands the page may run", () => {
+    expect(parsePageMessage({ type: "command", command: "checkDrift" }, state)).toEqual({ type: "command", command: "checkDrift" });
+    expect(parsePageMessage({ type: "command", command: "checkHarness", args: ["--evil"] }, state)).toEqual({ type: "command", command: "checkHarness" });
+    expect(parsePageMessage({ type: "command", command: "specflow.acceptRun" }, state)).toBeUndefined();
+    expect(parsePageMessage({ type: "command", command: "workbench.action.terminal.new" }, state)).toBeUndefined();
+    expect(workbenchCommands).toEqual({
+      checkDrift: "specflow.checkDrift",
+      checkHarness: "specflow.checkHarness",
+      showProblems: "workbench.actions.view.problems",
+    });
   });
 
   it("drops malformed messages", () => {

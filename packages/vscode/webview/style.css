@@ -59,3 +59,172 @@ body {
 .empty {
   color: var(--vscode-descriptionForeground);
 }
+
+button.secondary {
+  padding: 2px 10px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 2px;
+  color: var(--vscode-button-secondaryForeground);
+  background: var(--vscode-button-secondaryBackground);
+  font: inherit;
+  cursor: pointer;
+}
+
+button.secondary:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+button:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+
+.muted {
+  color: var(--vscode-descriptionForeground);
+}
+
+/* Overview (workbench-ui/R2) */
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 8px 0 20px;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  min-width: 200px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  background: var(--vscode-sideBar-background, transparent);
+}
+
+.stat-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 0.85em;
+  color: var(--vscode-descriptionForeground);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stat.ok > .codicon {
+  color: var(--vscode-testing-iconPassed, var(--vscode-charts-green));
+}
+
+.stat.warn > .codicon {
+  color: var(--vscode-editorWarning-foreground);
+}
+
+.stat.error > .codicon {
+  color: var(--vscode-errorForeground);
+}
+
+.root h2 {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin: 16px 0 8px;
+}
+
+.load-error {
+  padding: 8px 12px;
+  border: 1px solid var(--vscode-inputValidation-errorBorder);
+  background: var(--vscode-inputValidation-errorBackground);
+  border-radius: 4px;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.feature-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  padding: 12px;
+  text-align: left;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  color: var(--vscode-foreground);
+  background: var(--vscode-editorWidget-background);
+  font: inherit;
+  cursor: pointer;
+}
+
+.feature-card:hover {
+  border-color: var(--vscode-focusBorder);
+}
+
+.feature-name {
+  font-weight: 600;
+  font-size: 1.05em;
+}
+
+.feature-card progress {
+  width: 100%;
+  height: 6px;
+  appearance: none;
+  border: none;
+  border-radius: 3px;
+  background: var(--vscode-progressBar-background);
+  opacity: 0.9;
+}
+
+.feature-card progress::-webkit-progress-bar {
+  border-radius: 3px;
+  background: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+}
+
+.feature-card progress::-webkit-progress-value {
+  border-radius: 3px;
+  background: var(--vscode-progressBar-background);
+}
+
+.progress-label,
+.counts {
+  font-size: 0.9em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.counts[data-kind="tasks"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.count.done .codicon {
+  color: var(--vscode-testing-iconPassed, var(--vscode-charts-green));
+}
+
+.count.blocked .codicon {
+  color: var(--vscode-errorForeground);
+}
+
+.drift-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--vscode-editorWarning-foreground);
+  font-size: 0.9em;
+}

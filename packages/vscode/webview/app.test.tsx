@@ -77,6 +77,20 @@ describe("workbench page (workbench-ui/R1)", () => {
     expect(selected().textContent).toBe("Board");
   });
 
+  // workbench-ui/R2: a feature on the Overview opens the Board filtered to it, and the filter is saved.
+  it("opens the Board on a feature picked in the Overview", () => {
+    const api = fakeApi();
+    const state = {
+      revision: 1,
+      harness: { state: "unknown" as const },
+      roots: [{ root: "/repo", name: "repo", lintProblems: 0, drift: { checked: false as const }, features: [{ name: "auth", requirements: [], tasks: [] }] }],
+    };
+    render(<App api={api} state={state} />);
+    fireEvent.click(screen.getByRole("button", { name: /^auth:/ }));
+    expect(selected().textContent).toBe("Board");
+    expect(api.state).toEqual({ tab: "board", filter: { root: "/repo", feature: "auth" } });
+  });
+
   it("moves between tabs with the keyboard, keeping one tab in the tab order", () => {
     render(<App api={fakeApi()} />);
     const tablist = screen.getByRole("tablist");

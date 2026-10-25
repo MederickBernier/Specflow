@@ -64,6 +64,16 @@ export type WorkbenchState = {
 /** Messages the extension posts to the workbench page. */
 export type HostMessage = { type: "state"; state: WorkbenchState } | { type: "show"; tab: WorkbenchTab };
 
+/** Commands the page may run, by the name it uses: no others, and never with arguments. */
+export const workbenchCommands = {
+  checkDrift: "specflow.checkDrift",
+  checkHarness: "specflow.checkHarness",
+  showProblems: "workbench.actions.view.problems",
+} as const;
+export type WorkbenchCommand = keyof typeof workbenchCommands;
+
+const commandNames = Object.keys(workbenchCommands) as [WorkbenchCommand, ...WorkbenchCommand[]];
+
 const name = z.string().min(1).max(200);
 
 /** Raw shapes of what the page may post; anything else is dropped. */
@@ -75,6 +85,7 @@ const pageMessage = z.discriminatedUnion("type", [
   // The page rendered this state.
   z.object({ type: z.literal("rendered"), revision: z.number().int().nonnegative() }),
   // Intents, handled by the tabs' actions.
+  z.object({ type: z.literal("command"), command: z.enum(commandNames) }),
   z.object({ type: z.literal("run"), root: name, feature: name, task: name }),
   z.object({ type: z.literal("open"), root: name, feature: name, id: name }),
   z.object({ type: z.literal("openDiff"), path: z.string().min(1).max(4096) }),
@@ -104,6 +115,7 @@ export function parsePageMessage(raw: unknown, state: WorkbenchState | undefined
     case "ready":
     case "tab":
     case "rendered":
+    case "command":
       return message;
     case "run": {
       const task = findFeature(state, message.root, message.feature)?.tasks.find((t) => t.id === message.task);

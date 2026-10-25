@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { isWorkbenchTab, type WorkbenchTab, workbenchTabs } from "../src/workbench/html.ts";
-import type { WorkbenchState } from "../src/workbench/protocol.ts";
+import type { WorkbenchCommand, WorkbenchState } from "../src/workbench/protocol.ts";
+import { type FeatureRef, Overview } from "./overview.tsx";
 import type { WebviewApi } from "./vscode-api.ts";
 
 const labels: Record<WorkbenchTab, { title: string; icon: string; empty: string }> = {
@@ -21,6 +22,7 @@ const labels: Record<WorkbenchTab, { title: string; icon: string; empty: string 
 export function App({ api, initialTab, state }: { api: WebviewApi; initialTab?: WorkbenchTab; state?: WorkbenchState }) {
   const saved = api.getState()?.tab;
   const [tab, setTab] = useState<WorkbenchTab>(isWorkbenchTab(saved) ? saved : (initialTab ?? "overview"));
+  const [filter, setFilter] = useState<FeatureRef | undefined>(api.getState()?.filter);
   const tabRefs = useRef<Partial<Record<WorkbenchTab, HTMLButtonElement | null>>>({});
 
   const select = (next: WorkbenchTab, focus = false) => {
@@ -28,6 +30,14 @@ export function App({ api, initialTab, state }: { api: WebviewApi; initialTab?: 
     api.setState({ ...api.getState(), tab: next });
     if (focus) tabRefs.current[next]?.focus();
   };
+
+  // workbench-ui/R2: a feature card opens the Board filtered to that feature.
+  const openFeature = (ref: FeatureRef) => {
+    setFilter(ref);
+    api.setState({ ...api.getState(), filter: ref });
+    select("board");
+  };
+  const command = (name: WorkbenchCommand) => api.postMessage({ type: "command", command: name });
 
   // The host learns the current tab from a `tab` message.
   useEffect(() => {
@@ -82,7 +92,16 @@ export function App({ api, initialTab, state }: { api: WebviewApi; initialTab?: 
       </nav>
       <section id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`} tabIndex={0} class="panel">
         <h1>{labels[tab].title}</h1>
-        <p class="empty">{state ? labels[tab].empty : "Loading specs…"}</p>
+        {!state ? (
+          <p class="empty">Loading specs…</p>
+        ) : tab === "overview" ? (
+          <Overview state={state} onOpenFeature={openFeature} onCommand={command} />
+        ) : (
+          <p class="empty">
+            {labels[tab].empty}
+            {tab === "board" && filter && ` Showing ${filter.feature}.`}
+          </p>
+        )}
       </section>
     </div>
   );

@@ -1,7 +1,8 @@
 import type { WorkbenchTab } from "../src/workbench/html.ts";
+import type { FeatureRef } from "./overview.tsx";
 
 /** What the page saves with `setState`: restored when it is shown again or after a reload. */
-export type PageState = { tab?: WorkbenchTab };
+export type PageState = { tab?: WorkbenchTab; filter?: FeatureRef };
 
 /** The part of `acquireVsCodeApi()` the page uses; tests pass a fake. */
 export type WebviewApi = {

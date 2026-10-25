@@ -15,8 +15,8 @@ depends: T1
 State is built from roots, insights, review and harness health without the VS Code API; spec and run changes reach the open panel within 1 second; malformed messages and unknown paths are dropped.
 
 ## T3: Overview tab [R2]
-status: todo
-files: packages/vscode/webview/overview.tsx, packages/vscode/webview/style.css, packages/vscode/src/workbench/state.ts
+status: done
+files: packages/vscode/webview/**, packages/vscode/src/workbench/protocol.ts, packages/vscode/src/workbench/actions.ts, packages/vscode/src/extension.ts
 depends: T2
 
 Counts, progress, lint, drift and harness health render per feature; load errors show; clicking a feature opens the filtered Board.

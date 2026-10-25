@@ -381,6 +381,28 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
     assert.equal(diagnostic!.range.start.line, 2);
     assert.match(diagnostic!.message, /^src\/login\.ts changed in [0-9a-f]{7} "fix: reject empty passwords"/);
   });
+
+  // workbench-ui/R2: Check drift on the Overview runs the real check; the counts reach the page.
+  test("Overview's Check drift fills in the drift counts", async () => {
+    type Api = {
+      insights: { forget: (root: string) => void };
+      services: () => { root: string }[];
+      workbench: {
+        state?: { revision: number; roots: { drift: { checked: boolean; findings?: { feature: string }[] } }[] };
+        rendered?: number;
+        receive: (message: unknown) => unknown;
+      };
+    };
+    const api = extension().exports as Api;
+    for (const service of api.services()) api.insights.forget(service.root);
+    await vscode.commands.executeCommand("specflow.openWorkbench", { tab: "overview" });
+    await eventually(() => api.workbench.rendered !== undefined && api.workbench.rendered === api.workbench.state?.revision, "the page to render");
+    assert.equal(api.workbench.state!.roots[0]!.drift.checked, false);
+    assert.deepEqual(api.workbench.receive({ type: "command", command: "checkDrift" }), { type: "command", command: "checkDrift" });
+    await eventually(() => api.workbench.state!.roots[0]!.drift.checked && api.workbench.rendered === api.workbench.state!.revision, "drift results on the page");
+    assert.deepEqual(api.workbench.state!.roots[0]!.drift.findings!.map((f) => f.feature), ["auth"]);
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
 } else {
   // vscode-extension/R1: without specs nothing activates until Initialize specs runs.
   test("does not activate on a workspace without specs", async () => {

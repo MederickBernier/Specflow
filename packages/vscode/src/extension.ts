@@ -18,6 +18,7 @@ import { SpecService } from "./spec-service.js";
 import { corePath, VsCodeFileSystem } from "./vscode-fs.js";
 import { type OpenWorkbenchOptions, WorkbenchPanel, workbenchViewType } from "./workbench/panel.js";
 import type { WorkbenchInputs } from "./workbench/state.js";
+import { handleIntent } from "./workbench/actions.js";
 
 /** Context key: true when a workspace folder has specs. Commands other than init are only shown then. */
 export const hasSpecsKey = "specflow.hasSpecs";
@@ -115,6 +116,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Specfl
     review.onDidChangeTreeData(changed),
     runs.onDidChange(changed),
     onDidCheckHarness(changed),
+    panel.onDidRequest((intent) => void handleIntent(intent)),
     vscode.window.registerWebviewPanelSerializer(workbenchViewType, panel),
     vscode.commands.registerCommand("specflow.openWorkbench", (options?: OpenWorkbenchOptions) => {
       panel.open(options);
