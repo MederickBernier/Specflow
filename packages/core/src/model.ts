@@ -42,6 +42,8 @@ export type Feature = {
   requirements: Requirement[];
   tasks: Task[];
   design?: { markdown: string; location: Location };
+  /** Problems found while parsing this feature's files, such as `malformed-heading`. */
+  findings: Finding[];
 };
 
 /** Settings for one harness adapter, from `harness.<name>` in `config.yml`. */

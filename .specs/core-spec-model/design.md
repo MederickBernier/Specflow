@@ -48,6 +48,7 @@ type Feature = {
   requirements: Requirement[];
   tasks: Task[];
   design?: { markdown: string; location: Location };
+  findings: Finding[];        // from parsing, e.g. malformed-heading
 };
 
 type Config = {
@@ -85,7 +86,7 @@ type Finding = {
 
 ## Lint
 
-Each rule is a function `(tree: SpecTree) => Finding[]` registered in a list. Rules are independent and run in a fixed order so output is stable.
+Each rule is a function `(tree: SpecTree) => Finding[]` registered in a list. `malformed-heading` is detected while parsing, since the bad heading never becomes an item; the loader stores those findings on `Feature.findings` and the rule returns them. Rules are independent and run in a fixed order so output is stable.
 
 | Rule | Severity |
 | --- | --- |

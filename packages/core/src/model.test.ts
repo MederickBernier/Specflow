@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import type { Finding, Location, Requirement, Task } from "./model.js";
+import type { Feature, Finding, Location, Requirement, Task } from "./model.js";
 
 const location: Location = { file: "/repo/.specs/auth/requirements.md", startLine: 3, endLine: 9 };
 
@@ -10,6 +10,7 @@ describe("model", () => {
     expectTypeOf<Requirement["location"]>().toEqualTypeOf<Location>();
     expectTypeOf<Task["location"]>().toEqualTypeOf<Location>();
     expectTypeOf<Finding["location"]>().toEqualTypeOf<Location>();
+    expectTypeOf<Feature["findings"]>().toEqualTypeOf<Finding[]>();
   });
 
   // core-spec-model/R8: unknown metadata keys are kept in an `extra` map.
