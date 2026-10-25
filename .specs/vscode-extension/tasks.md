@@ -57,8 +57,8 @@ depends: T6, task-run/T9, drift-check/T7
 Run lens on tasks; summary lens on requirements with tasks, last commit and drift count; click opens the trace.
 
 ## T9: Drift diagnostics [R6]
-status: todo
-files: packages/vscode/src/diagnostics.ts
+status: done
+files: packages/vscode/src/diagnostics.ts, packages/vscode/src/insights.ts, packages/vscode/src/extension.ts
 depends: T4, drift-check/T7
 
 Drift fixture findings appear on requirement headings; `driftOnSave` setting respected.

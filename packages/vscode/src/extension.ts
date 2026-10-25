@@ -9,6 +9,7 @@ import { SpecExplorer } from "./explorer.js";
 import type { ExplorerNode } from "./explorer-nodes.js";
 import { headScheme, ReviewController } from "./run/review.js";
 import { RunController } from "./run/run-controller.js";
+import { findingsByFile } from "./diagnostics-data.js";
 import { checkHarness } from "./harness-health.js";
 import { Insights } from "./insights.js";
 import type { ExplorerSource } from "./explorer-nodes.js";
@@ -34,9 +35,17 @@ const review = new ReviewController({ git, fs });
 const insights = new Insights(git);
 const lenses = new SpecCodeLens(() => [...services.values()], insights);
 
-/** Recomputes trace and drift data for every root, then lenses. */
-async function refreshInsights(): Promise<void> {
-  await Promise.all([...services.values()].map((s) => insights.refresh(s)));
+/** `specflow.driftOnSave`: run the rule-based drift pass whenever a spec file is saved. */
+const driftOnSave = () => vscode.workspace.getConfiguration("specflow").get<boolean>("driftOnSave", false);
+
+/** Recomputes trace data for every root, and drift when asked or when driftOnSave is on. */
+async function refreshInsights(options: { drift?: boolean } = {}): Promise<void> {
+  await Promise.all([...services.values()].map((s) => insights.refresh(s, { drift: options.drift ?? driftOnSave() })));
+}
+
+/** Puts a root's drift findings in the Problems panel, or clears them when drift was not checked. */
+function showDrift(root: string): void {
+  diagnostics.replace(diagnostics.drift, root, findingsByFile(insights.get(root)?.drift ?? []));
 }
 
 /** The config of the first spec root, for harness selection. */
@@ -59,7 +68,7 @@ export type SpecflowApi = {
   runs: RunController;
   review: ReviewController;
   insights: Insights;
-  refreshInsights: () => Promise<void>;
+  refreshInsights: (options?: { drift?: boolean }) => Promise<void>;
 };
 
 /** Runs when a workspace contains `.specs/`, or when `Initialize specs` is invoked. */
@@ -84,7 +93,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<Specfl
     vscode.languages.registerCodeLensProvider({ scheme: "file", pattern: "**/*.md" }, lenses),
     vscode.workspace.registerTextDocumentContentProvider(commitScheme, new CommitDocuments(git)),
     vscode.commands.registerCommand("specflow.showTrace", (target?: string | ExplorerNode, options?: { show?: boolean }) => showTrace(target, options)),
-    insights.onDidChange(() => lenses.refresh()),
+    insights.onDidChange((root) => {
+      lenses.refresh();
+      showDrift(root);
+    }),
+    vscode.commands.registerCommand("specflow.checkDrift", async () => {
+      await refreshInsights({ drift: true });
+      const findings = [...services.values()].flatMap((s) => insights.get(s.root)?.drift ?? []);
+      void vscode.window.showInformationMessage(
+        findings.length === 0 ? "Specflow: no drift found." : `Specflow: ${findings.length} drift finding${findings.length === 1 ? "" : "s"}, shown in Problems.`,
+      );
+      return findings;
+    }),
     insights,
     lenses,
     vscode.workspace.registerTextDocumentContentProvider(headScheme, review),
@@ -141,11 +161,11 @@ async function refreshContext(): Promise<void> {
       explorer.refresh();
       lenses.refresh();
       diagnostics.updateLint(service);
-      void insights.refresh(service);
+      void insights.refresh(service, { drift: driftOnSave() });
     });
     await service.start();
     diagnostics.updateLint(service);
-    void insights.refresh(service);
+    void insights.refresh(service, { drift: driftOnSave() });
   }
   explorer.refresh();
   await vscode.commands.executeCommand("setContext", hasSpecsKey, roots.length > 0);
@@ -234,7 +254,7 @@ async function showTrace(target?: string | ExplorerNode, options: { show?: boole
     void vscode.window.showErrorMessage(`Specflow: no feature ${feature}`);
     return undefined;
   }
-  if (!insights.get(service.root)) await insights.refresh(service);
+  if (!insights.get(service.root)) await insights.refresh(service, { drift: driftOnSave() });
   const result = trace(service.tree, insights.get(service.root)?.commits ?? [], ref);
   if (!result.ok) {
     void vscode.window.showErrorMessage(`Specflow: ${result.error.message}`);

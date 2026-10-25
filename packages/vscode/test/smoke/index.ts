@@ -268,7 +268,7 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
 
     const requirements = await lensesOf(".specs/accounts/requirements.md");
     assert.deepEqual(requirements[1]?.[0], 20);
-    assert.match(String(requirements[1]?.[1]), /^1 task · last commit \d{4}-\d{2}-\d{2} · (no drift|\d+ drift findings?)$/);
+    assert.match(String(requirements[1]?.[1]), /^1 task · last commit \d{4}-\d{2}-\d{2} · (drift not checked|no drift|\d+ drift findings?)$/);
     assert.deepEqual(requirements[1]?.slice(2), ["specflow.showTrace", ["accounts/R2"]]);
 
     const items = (await vscode.commands.executeCommand("specflow.showTrace", "accounts/R2", { show: false })) as vscode.QuickPickItem[];
@@ -280,6 +280,45 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
     await vscode.commands.executeCommand("specflow.init");
     const product = await vscode.workspace.findFiles(".specs/product.md");
     assert.equal(product.length, 1);
+  });
+} else if (process.env.SPECFLOW_SMOKE === "drift") {
+  const root = () => vscode.workspace.workspaceFolders![0]!.uri;
+  const requirements = () => vscode.Uri.joinPath(root(), ".specs/auth/requirements.md");
+  const drift = () => vscode.languages.getDiagnostics(requirements()).filter((d) => String(d.code).startsWith("drift/"));
+  const touchSpec = async () => {
+    const tasks = vscode.Uri.joinPath(root(), ".specs/auth/tasks.md");
+    const text = new TextDecoder().decode(await vscode.workspace.fs.readFile(tasks));
+    await vscode.workspace.fs.writeFile(tasks, new TextEncoder().encode(`${text}\n`));
+  };
+
+  // vscode-extension/R6: drift only runs on save when driftOnSave is set.
+  test("does not check drift on save by default", async () => {
+    await eventually(() => extension().isActive, "activation");
+    await touchSpec();
+    await new Promise((r) => setTimeout(r, 2000));
+    assert.deepEqual(drift(), []);
+  });
+
+  test("checks drift on save with specflow.driftOnSave", async () => {
+    const settings = vscode.workspace.getConfiguration("specflow");
+    await settings.update("driftOnSave", true, vscode.ConfigurationTarget.Global);
+    try {
+      await touchSpec();
+      await eventually(() => drift().length === 1, "drift diagnostic", 5000);
+    } finally {
+      await settings.update("driftOnSave", undefined, vscode.ConfigurationTarget.Global);
+    }
+  });
+
+  // vscode-extension/R6: findings on the requirement heading, naming file and commit.
+  test("Check drift shows findings on the requirement heading with file and commit", async () => {
+    const findings = (await vscode.commands.executeCommand("specflow.checkDrift")) as unknown[];
+    assert.equal(findings.length, 1);
+    const [diagnostic] = drift();
+    assert.equal(diagnostic!.code, "drift/code-changed-since-spec");
+    assert.equal(diagnostic!.severity, vscode.DiagnosticSeverity.Warning);
+    assert.equal(diagnostic!.range.start.line, 2);
+    assert.match(diagnostic!.message, /^src\/login\.ts changed in [0-9a-f]{7} "fix: reject empty passwords"/);
   });
 } else {
   // vscode-extension/R1: without specs nothing activates until Initialize specs runs.

@@ -66,6 +66,11 @@
         "command": "specflow.showTrace",
         "title": "Trace",
         "category": "Specflow"
+      },
+      {
+        "command": "specflow.checkDrift",
+        "title": "Check drift",
+        "category": "Specflow"
       }
     ],
     "menus": {
@@ -105,6 +110,10 @@
         {
           "command": "specflow.showTrace",
           "when": "specflow.hasSpecs"
+        },
+        {
+          "command": "specflow.checkDrift",
+          "when": "specflow.hasSpecs"
         }
       ],
       "view/title": [
@@ -122,6 +131,11 @@
           "command": "specflow.discardRun",
           "when": "view == specflow.review",
           "group": "navigation@2"
+        },
+        {
+          "command": "specflow.checkDrift",
+          "when": "view == specflow.specs",
+          "group": "1_drift"
         }
       ],
       "view/item/context": [
@@ -168,6 +182,11 @@
           "type": "boolean",
           "default": true,
           "description": "Ask before each run, showing the task, harness and commit mode."
+        },
+        "specflow.driftOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Run the rule-based drift check whenever a spec file is saved. It reads the git history, so it can take a few seconds in large repositories."
         }
       }
     }

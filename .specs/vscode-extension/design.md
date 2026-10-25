@@ -60,6 +60,7 @@ A small webview, no framework: plain HTML and a message handler. Events are rend
 - Task headings in `tasks.md` get `$(play) Run T3` (or `Run T3 again` when done), calling `specflow.runTask`.
 - Requirement headings in `requirements.md` get `N tasks · last commit YYYY-MM-DD · M drift findings`, calling `specflow.showTrace`, which lists the tasks and commits in a quick pick; picking a commit opens `git show --stat` through a `specflow-commit:` document.
 - Commit and drift data come from `Insights`, a per-root cache of `readTraceCommits` and the rule-based `checkDrift`, refreshed on spec changes, after accept or discard, and on `Specflow: Refresh specs`. CodeLens requests only read the cache, so they never run git.
+- Drift is computed only by `Specflow: Check drift` or, with `specflow.driftOnSave`, on each spec change, since it can take seconds on a large history. Otherwise lenses say `drift not checked` and the `specflow-drift` collection is cleared, so stale findings never show. Drift findings sit on the requirement heading; their message names the file and commit.
 
 ## Settings
 

@@ -23,17 +23,22 @@ export class Insights implements vscode.Disposable {
     return this.#byRoot.get(root);
   }
 
-  /** Recomputes a root's commits and rule-based drift. */
-  async refresh(service: SpecService): Promise<void> {
+  /**
+   * Recomputes a root's trace commits, and its rule-based drift when `drift`
+   * is set; drift can take seconds on a large history (drift-check/R8), so it
+   * only runs on request or with `specflow.driftOnSave`. Without it the
+   * previous drift findings are dropped, since they may be stale.
+   */
+  async refresh(service: SpecService, options: { drift: boolean }): Promise<void> {
     const tree = service.tree;
     if (!tree) return;
     const commits = await readTraceCommits(this.#git, tree.root);
-    const drift = await checkDrift(this.#git, tree);
+    const drift = options.drift ? await checkDrift(this.#git, tree) : undefined;
     this.#byRoot.set(service.root, {
       commits: commits.ok ? commits.value : [],
-      ...(drift.ok && { drift: drift.value }),
+      ...(drift?.ok && { drift: drift.value }),
       ...(!commits.ok && { error: commits.error.message }),
-      ...(commits.ok && !drift.ok && { error: drift.error.message }),
+      ...(commits.ok && drift && !drift.ok && { error: drift.error.message }),
     });
     this.#changed.fire(service.root);
   }
