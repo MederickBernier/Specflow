@@ -28,6 +28,10 @@ extension.ts
 - `activate` returns `{ services }`, used by the smoke tests and later features. Services are created and disposed as spec roots appear and disappear (after init, or when workspace folders change).
 - One `SpecService` per workspace folder that has specs; multi-root workspaces are supported but not optimized.
 
+## Explorer
+
+A `Specs` view in the Explorer sidebar (`specflow.specs`, shown when `specflow.hasSpecs`). `explorerNodes` builds the nodes without the VS Code API, so they are unit tested; `SpecExplorer` maps them to `TreeItem`s. One root shows its features at the top; several roots each get a folder node; a root that fails to load shows an error node. Features list requirements, then tasks, with codicons by status (tasks: `circle-large-outline`, `sync`, `pass`, `circle-slash`; requirements: `verified`, `edit`, `trash`). Clicking opens the item's file with the cursor on its heading. `Specflow: Refresh specs` reloads on demand.
+
 ## Diagnostics
 
 Two `DiagnosticCollection`s, `specflow-lint` and `specflow-drift`, so each can be cleared independently. `Finding.severity` maps directly to `DiagnosticSeverity`.

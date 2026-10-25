@@ -58,6 +58,26 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
     assert.deepEqual(accounts.tasks.map((t) => t.id), ["T1", "T2", "T3", "T4"]);
   });
 
+  // vscode-extension/R2: the explorer shows features, requirements and tasks; clicking opens the line.
+  test("shows the spec tree in the explorer and opens items at their line", async () => {
+    type Node = { label: string; children: Node[] };
+    const api = extension().exports as {
+      explorer: { getChildren: (n?: Node) => Node[]; getTreeItem: (n: Node) => vscode.TreeItem };
+    };
+    const features = api.explorer.getChildren();
+    assert.deepEqual(features.map((f) => f.label), ["accounts", "billing"]);
+    const accounts = api.explorer.getChildren(features[0]);
+    assert.deepEqual(accounts.slice(0, 2).map((n) => n.label), ["R1: Sign in with email", "R2: Lock out after failed attempts"]);
+    const t3 = accounts.find((n) => n.label === "T3: Add lockout counter")!;
+    const item = api.explorer.getTreeItem(t3);
+    assert.equal((item.iconPath as vscode.ThemeIcon).id, "circle-large-outline");
+
+    await vscode.commands.executeCommand(item.command!.command, ...item.command!.arguments!);
+    const editor = vscode.window.activeTextEditor!;
+    assert.ok(editor.document.uri.fsPath.endsWith("tasks.md"));
+    assert.equal(editor.document.lineAt(editor.selection.active.line).text, "## T3: Add lockout counter [R2]");
+  });
+
   test("refuses to initialize over existing specs", async () => {
     await vscode.commands.executeCommand("specflow.init");
     const product = await vscode.workspace.findFiles(".specs/product.md");

@@ -22,6 +22,12 @@
         "command": "specflow.init",
         "title": "Initialize specs",
         "category": "Specflow"
+      },
+      {
+        "command": "specflow.refresh",
+        "title": "Refresh specs",
+        "category": "Specflow",
+        "icon": "$(refresh)"
       }
     ],
     "menus": {
@@ -29,6 +35,26 @@
         {
           "command": "specflow.init",
           "when": "!specflow.hasSpecs"
+        },
+        {
+          "command": "specflow.refresh",
+          "when": "specflow.hasSpecs"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "specflow.refresh",
+          "when": "view == specflow.specs",
+          "group": "navigation"
+        }
+      ]
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "specflow.specs",
+          "name": "Specs",
+          "when": "specflow.hasSpecs"
         }
       ]
     }

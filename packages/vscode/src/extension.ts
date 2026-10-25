@@ -1,5 +1,8 @@
 import { findRoot, type InitError, type InitResult, initSpecs, type Result } from "@specflow/core";
 import * as vscode from "vscode";
+import { basename } from "node:path";
+import { SpecExplorer } from "./explorer.js";
+import type { ExplorerSource } from "./explorer-nodes.js";
 import { SpecService } from "./spec-service.js";
 import { corePath, VsCodeFileSystem } from "./vscode-fs.js";
 
@@ -11,18 +14,33 @@ const fs = new VsCodeFileSystem();
 /** One service per spec root, created as roots appear. */
 const services = new Map<string, SpecService>();
 
+const explorer = new SpecExplorer(() =>
+  [...services.values()].map((s): ExplorerSource => ({
+    root: s.root,
+    name: basename(s.root),
+    ...(s.tree && { tree: s.tree }),
+    ...(s.error && !s.tree && { error: s.error.message }),
+  })),
+);
+
 /** What `activate` returns; also used by the smoke tests. */
-export type SpecflowApi = { services: () => SpecService[] };
+export type SpecflowApi = { services: () => SpecService[]; explorer: SpecExplorer };
 
 /** Runs when a workspace contains `.specs/`, or when `Initialize specs` is invoked. */
 export async function activate(context: vscode.ExtensionContext): Promise<SpecflowApi> {
   context.subscriptions.push(
     vscode.commands.registerCommand("specflow.init", () => initialize()),
+    vscode.commands.registerCommand("specflow.refresh", async () => {
+      await Promise.all([...services.values()].map((s) => s.load()));
+      explorer.refresh();
+    }),
+    vscode.window.registerTreeDataProvider("specflow.specs", explorer),
+    explorer,
     vscode.workspace.onDidChangeWorkspaceFolders(() => refreshContext()),
     { dispose: () => [...services.values()].forEach((s) => s.dispose()) },
   );
   await refreshContext();
-  return { services: () => [...services.values()] };
+  return { services: () => [...services.values()], explorer };
 }
 
 export function deactivate(): void {}
@@ -51,8 +69,10 @@ async function refreshContext(): Promise<void> {
     if (services.has(root)) continue;
     const service = new SpecService(root, fs);
     services.set(root, service);
+    service.onDidChange(() => explorer.refresh());
     await service.start();
   }
+  explorer.refresh();
   await vscode.commands.executeCommand("setContext", hasSpecsKey, roots.length > 0);
 }
 

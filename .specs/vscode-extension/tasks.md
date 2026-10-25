@@ -15,8 +15,8 @@ depends: T1
 Saving a spec file fires `onDidChange` once after the debounce.
 
 ## T3: Spec explorer tree view [R2]
-status: todo
-files: packages/vscode/src/explorer.ts
+status: done
+files: packages/vscode/src/explorer.ts, packages/vscode/src/explorer-nodes.ts
 depends: T2
 
 Tree shows features, requirements and tasks with status icons; click opens the right line.
