@@ -1,15 +1,4 @@
-import {
-  changedFiles,
-  checkScope,
-  extractSpecNotes,
-  type Recording,
-  recordRun,
-  restoreTaskStatus,
-  type RunEvent,
-  setTaskStatus,
-  startRun,
-  tasksFile,
-} from "@specflow/core";
+import { type Recording, type RunEvent, runTask, tasksFile } from "@specflow/core";
 import { loadOrReport, relativePath, writeJsonLine } from "../output.js";
 import { exitCodes, type Io } from "../program.js";
 
@@ -40,69 +29,38 @@ export async function runCommand(
   }
 
   const controller = new AbortController();
-  const handle = await startRun(
-    { fs: io.fs, git: io.git, registry: io.registry, clock: io.clock },
-    tree,
-    { feature, task, ...(options.harness !== undefined && { harness: options.harness }), allowDirty: options.allowDirty },
-    controller.signal,
-  );
-  if (!handle.ok) {
-    const install = handle.error.kind === "harness-unavailable" && handle.error.check.installUrl;
-    return fail(handle.error.kind, install ? `${handle.error.message}\nSee ${install}` : handle.error.message);
-  }
-
-  const status = await setTaskStatus(io.fs, tree, { feature, task }, "doing");
-  if (!status.ok) return fail(status.error.kind, status.error.message);
-  const snapshot = status.value;
-
-  for (const warning of handle.value.warnings) {
-    if (options.json) writeJsonLine(io, { schema: runSchema, warning });
-    else io.stderr(`specflow: warning: ${warning}\n`);
-  }
-
   const stopListening = io.onInterrupt(() => {
     if (!options.json) io.stderr("\nCancelling... (press Ctrl+C again to quit now)\n");
     controller.abort();
   });
-  const events: RunEvent[] = [];
+  let result: Awaited<ReturnType<typeof runTask>>;
   try {
-    for await (const event of handle.value.events) {
-      events.push(event);
-      if (options.json) writeJsonLine(io, { schema: runSchema, event });
-      else io.stdout(renderEvent(event, `${feature}/${task}`));
-    }
+    result = await runTask(
+      { fs: io.fs, git: io.git, registry: io.registry, clock: io.clock },
+      tree,
+      { feature, task, ...(options.harness !== undefined && { harness: options.harness }), allowDirty: options.allowDirty },
+      controller.signal,
+      {
+        onStarted: ({ warnings }) => {
+          for (const warning of warnings) {
+            if (options.json) writeJsonLine(io, { schema: runSchema, warning });
+            else io.stderr(`specflow: warning: ${warning}\n`);
+          }
+        },
+        onEvent: (event) => {
+          if (options.json) writeJsonLine(io, { schema: runSchema, event });
+          else io.stdout(renderEvent(event, `${feature}/${task}`));
+        },
+      },
+    );
   } finally {
     stopListening();
   }
-
-  const finished = events.at(-1);
-  const ok = finished?.kind === "finished" && finished.ok;
-  const cancelled = finished?.kind === "finished" && finished.cancelled === true;
-  const files = changedFiles(events);
-  const planned = tree.features.find((f) => f.name === feature)!.tasks.find((t) => t.id === task)!;
-  const scope = checkScope(tree, planned, files);
-  // Spec edits by the harness stay unstaged for review; tasks.md is recorded for the status change.
-  const codeFiles = files.filter((file) => !scope.specEdits.includes(file));
-  const lastMessage = events.findLast((e) => e.kind === "message");
-  const reply = (finished?.kind === "finished" && finished.summary) || (lastMessage?.kind === "message" ? lastMessage.text : "");
-  const specNotes = extractSpecNotes(reply).notes;
-
-  let recording: Recording | undefined;
-  if (ok && codeFiles.length > 0) {
-    await setTaskStatus(io.fs, tree, { feature, task }, "done");
-    const recorded = await recordRun({ git: io.git, fs: io.fs }, tree, { feature, task }, {
-      ok,
-      ...(finished.summary !== undefined && { summary: finished.summary }),
-      files: [...codeFiles, tasksFile(tree, feature)],
-    });
-    if (!recorded.ok) {
-      await restoreTaskStatus(io.fs, tree, snapshot);
-      return fail(recorded.error.kind, `The run succeeded but could not be recorded: ${recorded.error.message}`);
-    }
-    recording = recorded.value;
-  } else {
-    await restoreTaskStatus(io.fs, tree, snapshot);
+  if (!result.ok) {
+    const install = result.error.kind === "harness-unavailable" && result.error.check.installUrl;
+    return fail(result.error.kind, install ? `${result.error.message}\nSee ${install}` : result.error.message);
   }
+  const { ok, cancelled, files, recording, scope, specNotes } = result.value;
 
   if (options.json) {
     writeJsonLine(io, {
