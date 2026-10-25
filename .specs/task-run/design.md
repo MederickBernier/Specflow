@@ -12,6 +12,24 @@ CLI / extension
 
 The runner lives in `core` but takes the process spawner and git client as injected interfaces, so `core` still never spawns processes itself.
 
+## Runner
+
+`startRun(deps, tree, request, signal)` with `deps = { fs, git, registry, clock }` does every check before anything is sent to the harness, and returns `{ harness, prompt, warnings, events }` or a `RunError`:
+
+1. Build the prompt (`unknown-task`, `unknown-requirement`).
+2. Resolve the adapter from `request.harness` or `harness.default` (`unknown-adapter`).
+3. Unless `allowDirty`: `git status --porcelain=v1 -z --untracked-files=all -- . :(exclude)<specsDir>` from the spec root; any entry refuses with the file list (`dirty-tree`).
+4. `adapter.check()` (`harness-unavailable`); its warnings are passed through.
+
+`events` starts the harness when first read and is supervised, so shells can rely on the event rules whatever the adapter does:
+
+- A missing `started` is added, extra ones are dropped, anything after `finished` is ignored.
+- An adapter that ends without `finished` or throws gets a fatal `error` and `finished { ok: false }`.
+- After an abort, a failed `finished` is marked `cancelled`. If the adapter has not finished within 5 seconds of the abort (`cancelGraceMs`), the runner emits a non-fatal `error` and `finished { ok: false, cancelled: true }` itself and stops the adapter.
+- When the caller stops reading, the adapter's iterator is returned so it can stop its process.
+
+Adapters must treat a signal that is already aborted when they start waiting on it as aborted; listening for the `abort` event alone misses it.
+
 ## Event model
 
 ```ts

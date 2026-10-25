@@ -48,3 +48,7 @@ export type { ReplayOptions, ReplaySource, Sleep } from "./run/replay-adapter.js
 export { parseEventStream, ReplayAdapter } from "./run/replay-adapter.js";
 export type { PromptError } from "./run/prompt.js";
 export { buildTaskPrompt } from "./run/prompt.js";
+export type { StatusEntry } from "./git-status.js";
+export { gitStatus, parseStatus } from "./git-status.js";
+export type { RunError, RunHandle, RunnerDeps, RunRequest } from "./run/runner.js";
+export { cancelGraceMs, startRun } from "./run/runner.js";

@@ -29,8 +29,8 @@ depends: T2, core-spec-model/T7
 Snapshot test on the clean fixture; other features' specs never appear in the prompt.
 
 ## T5: Runner with dirty tree check and cancellation [R5, R10]
-status: todo
-files: packages/core/src/run/runner.ts
+status: done
+files: packages/core/src/run/runner.ts, packages/core/src/git-status.ts
 depends: T3, T4, T12
 
 With the replay adapter: dirty tree refuses, `--allow-dirty` proceeds, abort yields a cancelled `finished` event.
