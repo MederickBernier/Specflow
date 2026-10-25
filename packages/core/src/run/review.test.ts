@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,9 +21,11 @@ const read = (file: string) => readFileSync(join(dir, file), "utf8");
 
 /** A staged run of accounts/T3 on a copy of the clean fixture: login.ts changed, lockout.ts added. */
 async function stagedRun(): Promise<{ tree: SpecTree; recording: StagedRecording; snapshot: StatusSnapshot; deps: { git: NodeGit; fs: NodeFileSystem } }> {
-  dir = toPosixPath(mkdtempSync(join(tmpdir(), "specflow-review-")));
+  // The long path, as git reports it: Windows can hand out 8.3 short temp paths (RUNNER~1).
+  dir = toPosixPath(realpathSync.native(mkdtempSync(join(tmpdir(), "specflow-review-"))));
   cpSync(fileURLToPath(new URL("../../../../fixtures/repos/clean", import.meta.url)), dir, { recursive: true });
-  for (const [k, v] of [["user.name", "T"], ["user.email", "t@example.com"], ["commit.gpgsign", "false"]]) git("config", k!, v!);
+  // core.autocrlf: Windows runners turn it on globally, so restored files would come back with CRLF.
+  for (const [k, v] of [["user.name", "T"], ["user.email", "t@example.com"], ["commit.gpgsign", "false"], ["core.autocrlf", "false"]]) git("config", k!, v!);
   const loaded = await loadSpecTree(fs, dir);
   if (!loaded.ok) throw new Error(loaded.error.message);
   const tree = loaded.value;

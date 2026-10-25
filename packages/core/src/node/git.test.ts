@@ -15,6 +15,8 @@ beforeAll(async () => {
   repo = await mkdtemp(join(tmpdir(), "specflow-git-"));
   git = new NodeGit({ cwd: repo });
   await git.run(["init", "--quiet"]);
+  // Windows runners set core.autocrlf=true globally, which would turn the CRLF below into LF on add.
+  await git.run(["config", "core.autocrlf", "false"]);
   for (const name of ["a", "b", "c"]) {
     await writeFile(join(repo, `${name}.txt`), `${name}\r\nline two\n`);
     await git.run(["add", `${name}.txt`]);
