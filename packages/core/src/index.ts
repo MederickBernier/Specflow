@@ -11,3 +11,7 @@ export type {
   SpecTree,
   Task,
 } from "./model.js";
+export type { ConfigError } from "./config.js";
+export { configPath, defaultConfig, loadConfig, parseConfig } from "./config.js";
+export type { Result } from "./result.js";
+export { err, ok } from "./result.js";

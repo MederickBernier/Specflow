@@ -97,6 +97,8 @@ Validated with zod. Defaults live in one `defaultConfig` constant, merged deeply
 
 `Config` is the normalized form: in the file, adapter settings sit next to `harness.default` (`harness.claude-code.extraArgs`); the loader collects every key other than `default` into `harness.adapters`.
 
+The file is always `<root>/.specs/config.yml`; `specsDir` only moves the feature folders. Each schema key is optional, so the file is validated before the merge and every invalid key is reported at once as `<dotted.key>: <expected type>`. Unknown keys are ignored.
+
 ## Interfaces
 
 ```ts

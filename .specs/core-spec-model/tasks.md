@@ -21,8 +21,8 @@ depends: T1
 Types from the design compile, with a Node and an in-memory FileSystem implementation.
 
 ## T4: Load and validate config [R6]
-status: todo
-files: packages/core/src/config.ts
+status: done
+files: packages/core/src/config.ts, packages/core/src/result.ts
 depends: T3
 
 Missing file returns defaults, invalid values return an error naming the key.
