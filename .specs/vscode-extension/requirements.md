@@ -45,7 +45,7 @@ status: approved
 
 - Given a successful run
 - Then a list of changed files is shown, each opening VS Code's built-in diff editor against `HEAD`
-- And the user can accept (commit with the prepared trailers) or discard (restore the files)
+- And the user can accept (commit with the prepared trailers) or discard (restore the files and return the task to its previous status)
 
 ## R6: Drift diagnostics
 priority: must

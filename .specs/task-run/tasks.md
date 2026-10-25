@@ -31,14 +31,14 @@ Snapshot test on the clean fixture; other features' specs never appear in the pr
 ## T5: Runner with dirty tree check and cancellation [R5, R10]
 status: todo
 files: packages/core/src/run/runner.ts
-depends: T3, T4
+depends: T3, T4, T12
 
 With the replay adapter: dirty tree refuses, `--allow-dirty` proceeds, abort yields a cancelled `finished` event.
 
 ## T6: Claude Code adapter [R4, R5]
 status: todo
 files: packages/adapter-claude-code/src/**
-depends: T1, T2
+depends: T1, T2, T12
 
 Contract tests on the spike fixtures map every recorded stream to the expected `RunEvent` sequence; `check()` reports a missing binary clearly.
 
@@ -54,7 +54,7 @@ status: todo
 files: packages/core/src/run/status.ts
 depends: T5
 
-Before and after file diff shows only the status line changed, for all three transitions.
+Before and after file diff shows only the status line changed, for every transition; in staged mode the `done` edit is staged with the other changes.
 
 ## T9: Trace from git history [R8]
 status: todo
@@ -75,3 +75,10 @@ status: todo
 depends: T10
 
 Build one real feature in another repo using only `specflow run`. Write down what hurt before starting the drift-check feature.
+
+## T12: Git, Spawner and Clock interfaces []
+status: todo
+files: packages/core/src/git.ts, packages/core/src/spawner.ts, packages/core/src/clock.ts, packages/core/src/node/**
+depends: core-spec-model/T3
+
+Interfaces from the design compile; Node implementations in `core/node` pass an integration test against a temp git repo; in-memory fakes exist for tests. No other `core` module imports `core/node`.

@@ -40,6 +40,36 @@ interface HarnessAdapter {
 type RunInput = { cwd: string; prompt: string; extraArgs: string[] };
 ```
 
+## I/O interfaces
+
+Defined in `core`, implemented for Node in `core/node`, faked in tests.
+
+```ts
+interface Git {
+  // Runs `git <args>` in cwd with an argument array, never a shell string.
+  run(args: string[], opts?: { cwd?: string; stdin?: string }): Promise<Result<string>>;
+  // Same, but yields stdout line by line, for large `git log` output.
+  lines(args: string[], opts?: { cwd?: string }): AsyncIterable<string>;
+}
+
+interface Spawner {
+  spawn(command: string, args: string[], opts: { cwd: string; stdin?: string }): SpawnedProcess;
+}
+
+interface SpawnedProcess {
+  stdout: AsyncIterable<string>;   // line by line
+  stderr: AsyncIterable<string>;
+  exit: Promise<{ code: number | null; signal: string | null }>;
+  kill(signal: "SIGTERM" | "SIGKILL"): void;
+}
+
+interface Clock {
+  now(): Date;
+}
+```
+
+`Git` stays deliberately thin: typed helpers (`status`, `stage`, `commit`, `log`, `isAncestor`) are plain functions in `core` built on `run` and `lines`, so their parsing is unit tested without a real repo.
+
 ## Claude Code adapter
 
 - Spawn the `claude` binary in print mode with streaming JSON output, passing the prompt on stdin and arguments as an array (no shell).

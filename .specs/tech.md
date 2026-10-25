@@ -13,14 +13,15 @@
 
 | Package | Role | May depend on |
 | --- | --- | --- |
-| `@specflow/core` | Spec model, lint, trace graph, drift rules, adapter interface, event model | remark, simple-git, yaml, zod |
+| `@specflow/core` | Spec model, lint, trace graph, drift rules, adapter interface, event model | remark, yaml, zod (`core/node` entry point also: simple-git) |
 | `@specflow/adapter-claude-code` | Runs a task through Claude Code headless | core |
 | `@specflow/cli` | Terminal front end | core, adapters, commander |
 | `specflow-vscode` | VS Code shell | core, adapters, vscode API |
 
 ## Architecture rules
 
-- `core` never imports `vscode`, never spawns processes, never reads environment variables directly. I/O goes through injected interfaces (`FileSystem`, `Git`, `Clock`).
+- `core` never imports `vscode`, never spawns processes, never reads environment variables directly. I/O goes through injected interfaces (`FileSystem`, `Git`, `Spawner`, `Clock`).
+- The one exception is the `@specflow/core/node` entry point (`packages/core/src/node/`), which holds the Node implementations of those interfaces. Nothing else in `core` imports from it; shells (CLI, extension) construct the implementations and inject them.
 - Adapters translate harness output into the normalized event model in `core`. Nothing outside an adapter knows harness-specific flags or formats.
 - If a feature can live in `core`, it does. The CLI and the extension only parse input, call `core`, and render output.
 - Every CLI command supports `--json` with a stable, versioned output schema. The extension may call `core` directly, but the JSON schema is the contract other shells use.

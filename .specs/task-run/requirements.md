@@ -68,8 +68,9 @@ priority: should
 status: approved
 
 - Given a run starts, then the task's `status` line becomes `doing`
-- Given a successful run is committed, then it becomes `done`
-- Given the run fails, then it returns to its previous status
+- Given a successful run is recorded, then it becomes `done` and the `tasks.md` change is part of what is recorded: staged in `staged` mode, included in the commit in `auto` mode
+- Given the run fails or is cancelled, then it returns to its previous status
+- Given a staged result is discarded, then it returns to its previous status
 - And no other line in `tasks.md` changes
 
 ## R8: Trace a requirement or task
