@@ -26,6 +26,9 @@ describe("joinPath", () => {
     [["C:/", ".specs"], "C:/.specs"],
     [["//wsl$/Ubuntu/repo", ".specs/a"], "//wsl$/Ubuntu/repo/.specs/a"],
     [["/repo", "docs/specs"], "/repo/docs/specs"],
+    [["/", ".specs"], "/.specs"],
+    [["/", ".specs", "config.yml"], "/.specs/config.yml"],
+    [["C:\\", ".specs"], "C:/.specs"],
   ])("%j -> %j", ([base, ...segments], expected) => {
     expect(joinPath(base!, ...segments)).toBe(expected);
   });

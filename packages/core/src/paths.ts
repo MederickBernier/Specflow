@@ -24,7 +24,9 @@ export function toPosixPath(path: string): string {
 
 /** Joins path segments onto `base`, keeping a UNC prefix. */
 export function joinPath(base: string, ...segments: string[]): string {
-  return toPosixPath(`${base}/${segments.join("/")}`);
+  // A root base ("/" or "C:/") already ends in a slash; adding another would read as a UNC prefix.
+  const root = toPosixPath(base);
+  return toPosixPath(`${root}${root.endsWith("/") ? "" : "/"}${segments.join("/")}`);
 }
 
 /** Parent directory of `path`, or undefined when `path` is a root (`/`, `C:/`, `//server/share`). */

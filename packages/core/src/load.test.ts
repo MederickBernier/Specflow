@@ -40,6 +40,15 @@ describe("findRoot", () => {
     expect(await findRoot(fs, "\\\\wsl$\\Ubuntu\\home\\me\\repo\\src")).toBe("//wsl$/Ubuntu/home/me/repo");
   });
 
+  it("does not mistake the root for a UNC path when walking up", async () => {
+    const seen: string[] = [];
+    const fs = new MemoryFileSystem({ "/tmp/empty/x.ts": "" });
+    const spy = { ...fs, readFile: fs.readFile.bind(fs), writeFile: fs.writeFile.bind(fs), listDir: fs.listDir.bind(fs), exists: (p: string) => (seen.push(p), fs.exists(p)) };
+    expect(await findRoot(spy, "/tmp/empty")).toBeUndefined();
+    expect(seen).toContain("/.specs");
+    expect(seen.some((p) => p.startsWith("//"))).toBe(false);
+  });
+
   it("returns undefined when there are no specs anywhere", async () => {
     expect(await findRoot(new MemoryFileSystem({ "/a/b.txt": "" }), "/a")).toBeUndefined();
   });
