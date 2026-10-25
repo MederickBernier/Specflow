@@ -74,3 +74,5 @@ export { buildDriftContext } from "./drift/context.js";
 export { codeChangedSinceSpec } from "./drift/rules/code-changed.js";
 export { specChangedSinceCode } from "./drift/rules/spec-changed.js";
 export { unimplemented } from "./drift/rules/unimplemented.js";
+export { checkDrift, driftRules } from "./drift/check.js";
+export { suppressAcked } from "./drift/suppress.js";

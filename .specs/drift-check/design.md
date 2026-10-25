@@ -38,7 +38,9 @@ Trailers record intent, not what the code does. Dogfooding (`docs/dogfood/2026-1
 
 ## Suppression
 
-`drift-ack: <hash>` on a requirement. A finding is suppressed when every commit causing it is an ancestor of, or equal to, the acked hash (`git merge-base --is-ancestor`).
+`drift-ack: <hash>` on a requirement. A finding is suppressed when every commit causing it is an ancestor of, or equal to, the acked hash (`git merge-base --is-ancestor`). The causing commit is the finding's `evidence.commit`; short hashes work. `unimplemented` has no causing commit and is suppressed by any `drift-ack` that names a real commit. An unknown hash suppresses nothing.
+
+`checkDrift(git, tree, { target })` builds the context, runs the rules in table order, applies suppression and filters to `feature` or `feature/R<n>`.
 
 ## LLM pass
 

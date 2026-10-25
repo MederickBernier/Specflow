@@ -36,8 +36,8 @@ depends: T3, T1
 Match their fixtures exactly.
 
 ## T6: Suppression with drift-ack [R5]
-status: todo
-files: packages/core/src/drift/suppress.ts
+status: done
+files: packages/core/src/drift/suppress.ts, packages/core/src/drift/check.ts
 depends: T4, T5
 
 Acked fixture reports nothing; adding a newer commit makes the finding return.
