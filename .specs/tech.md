@@ -2,7 +2,7 @@
 
 ## Stack
 
-- TypeScript (strict), Node 22.18 or later (runs `.ts` scripts without a loader)
+- TypeScript (strict, ES2023), Node 22.18 or later (runs `.ts` scripts without a loader)
 - pnpm workspaces monorepo
 - esbuild for the extension bundle, tsc for library builds
 - Vitest for unit and integration tests

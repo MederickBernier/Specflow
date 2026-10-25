@@ -29,3 +29,24 @@ Staged 2 files and marked the task done. Review, then commit with:
   git commit -F .git/SPECFLOW_MSG
 "
 `;
+
+exports[`specflow run scope and spec notes > flags unplanned files and spec edits, keeps spec edits unstaged, and prints spec notes 1`] = `
+"Running accounts/T3 with sprawl
+
+  + src/auth/lockout.ts
+  + src/billing.ts
+  ~ .specs/accounts/requirements.md
+
+Finished.
+Staged 3 files and marked the task done. Review, then commit with:
+  git commit -F .git/SPECFLOW_MSG
+
+Warning: changed outside T3's files list (recorded, check they belong to this task):
+  src/billing.ts
+Warning: the harness edited spec files; left unstaged for review:
+  .specs/accounts/requirements.md
+Spec notes from the agent (not applied):
+  - R2 does not say when the counter resets.
+  - design.md: memory store is lost on restart.
+"
+`;

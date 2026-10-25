@@ -1,5 +1,7 @@
 import {
   changedFiles,
+  checkScope,
+  extractSpecNotes,
   type Recording,
   recordRun,
   restoreTaskStatus,
@@ -77,14 +79,21 @@ export async function runCommand(
   const ok = finished?.kind === "finished" && finished.ok;
   const cancelled = finished?.kind === "finished" && finished.cancelled === true;
   const files = changedFiles(events);
+  const planned = tree.features.find((f) => f.name === feature)!.tasks.find((t) => t.id === task)!;
+  const scope = checkScope(tree, planned, files);
+  // Spec edits by the harness stay unstaged for review; tasks.md is recorded for the status change.
+  const codeFiles = files.filter((file) => !scope.specEdits.includes(file));
+  const lastMessage = events.findLast((e) => e.kind === "message");
+  const reply = (finished?.kind === "finished" && finished.summary) || (lastMessage?.kind === "message" ? lastMessage.text : "");
+  const specNotes = extractSpecNotes(reply).notes;
 
   let recording: Recording | undefined;
-  if (ok && files.length > 0) {
+  if (ok && codeFiles.length > 0) {
     await setTaskStatus(io.fs, tree, { feature, task }, "done");
     const recorded = await recordRun({ git: io.git, fs: io.fs }, tree, { feature, task }, {
       ok,
       ...(finished.summary !== undefined && { summary: finished.summary }),
-      files: [...files, tasksFile(tree, feature)],
+      files: [...codeFiles, tasksFile(tree, feature)],
     });
     if (!recorded.ok) {
       await restoreTaskStatus(io.fs, tree, snapshot);
@@ -96,9 +105,13 @@ export async function runCommand(
   }
 
   if (options.json) {
-    writeJsonLine(io, { schema: runSchema, result: { ok, cancelled, files, recording: recording ?? null } });
+    writeJsonLine(io, {
+      schema: runSchema,
+      result: { ok, cancelled, files, recording: recording ?? null, ...scope, specNotes },
+    });
   } else {
     io.stdout(renderOutcome(tree.root, { ok, cancelled, files, recording }));
+    io.stdout(renderFollowUp(task, tasksFile(tree, feature), scope, specNotes));
   }
   if (cancelled) return exitCodes.cancelled;
   return ok ? exitCodes.ok : exitCodes.failed;
@@ -132,6 +145,32 @@ function renderEvent(event: RunEvent, target: string): string {
     case "finished":
       return event.cancelled ? "\nCancelled.\n" : event.ok ? "\nFinished.\n" : "\nFailed.\n";
   }
+}
+
+function renderFollowUp(
+  task: string,
+  statusFile: string,
+  scope: { specEdits: string[]; outOfScope: string[] },
+  specNotes: string[],
+): string {
+  const lines: string[] = [];
+  if (scope.outOfScope.length > 0) {
+    lines.push(`Warning: changed outside ${task}'s files list (recorded, check they belong to this task):`);
+    lines.push(...scope.outOfScope.map((file) => `  ${file}`));
+  }
+  const unstaged = scope.specEdits.filter((file) => file !== statusFile);
+  if (unstaged.length > 0) {
+    lines.push("Warning: the harness edited spec files; left unstaged for review:");
+    lines.push(...unstaged.map((file) => `  ${file}`));
+  }
+  if (scope.specEdits.includes(statusFile)) {
+    lines.push(`Warning: the harness edited ${statusFile}; it is recorded with the status change, check its diff.`);
+  }
+  if (specNotes.length > 0) {
+    lines.push("Spec notes from the agent (not applied):");
+    lines.push(...specNotes.map((note) => `  - ${note}`));
+  }
+  return lines.length > 0 ? `\n${lines.join("\n")}\n` : "";
 }
 
 function renderOutcome(

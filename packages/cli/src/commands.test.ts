@@ -61,6 +61,43 @@ function writer(): HarnessAdapter {
   };
 }
 
+/** Does the task, but also strays: an unplanned file, a spec edit, and spec notes. */
+function sprawl(): HarnessAdapter {
+  return {
+    name: "sprawl",
+    check: async () => ok({ version: "1", warnings: [] }),
+    run: async function* () {
+      yield { ...started, harness: "sprawl" };
+      writeFileSync(join(dir, "src/auth/lockout.ts"), "export const attempts = 5;\n");
+      yield { kind: "file-changed", path: "src/auth/lockout.ts", change: "added" };
+      writeFileSync(join(dir, "src/billing.ts"), "// for billing/T1, not this task\n");
+      yield { kind: "file-changed", path: "src/billing.ts", change: "added" };
+      const requirements = join(dir, ".specs/accounts/requirements.md");
+      writeFileSync(requirements, `${readFileSync(requirements, "utf8")}\n<!-- edited by the agent -->\n`);
+      yield { kind: "file-changed", path: ".specs/accounts/requirements.md", change: "modified" };
+      yield {
+        kind: "finished",
+        ok: true,
+        summary: "Added the lockout counter.\n\n**Files:**\n- src/auth/lockout.ts\n\nSpec notes:\n- R2 does not say when the counter resets.\n- design.md: memory store is lost on restart.",
+      };
+    },
+  };
+}
+
+/** Only edits a spec file. */
+function specOnly(): HarnessAdapter {
+  return {
+    name: "spec-only",
+    check: async () => ok({ version: "1", warnings: [] }),
+    run: async function* () {
+      yield { ...started, harness: "spec-only" };
+      writeFileSync(join(dir, ".specs/accounts/design.md"), "rewritten\n");
+      yield { kind: "file-changed", path: ".specs/accounts/design.md", change: "modified" };
+      yield { kind: "finished", ok: true };
+    },
+  };
+}
+
 /** Waits until cancelled. */
 function hanging(): HarnessAdapter {
   return {
@@ -86,6 +123,8 @@ async function specflow(...argv: string[]) {
   let interrupt: (() => void) | undefined;
   const registry = new AdapterRegistry([
     writer(),
+    sprawl(),
+    specOnly(),
     hanging(),
     missing,
     new ReplayAdapter({ name: "fails", fs, file: toPosixPath(join(fixtures, "events/failure.jsonl")) }),
@@ -199,7 +238,7 @@ describe("specflow run", () => {
   it.each([
     [["run", "accounts"], 2, 'Expected <feature>/<task>, such as auth/T3, not "accounts"'],
     [["run", "accounts/T9", "--harness", "test"], 1, "No task accounts/T9"],
-    [["run", "accounts/T3", "--harness", "aider"], 1, 'Unknown harness "aider". Registered: fails, hang, missing, test'],
+    [["run", "accounts/T3", "--harness", "aider"], 1, 'Unknown harness "aider". Registered: fails, hang, missing, spec-only, sprawl, test'],
   ])("rejects %j", async (argv, code, message) => {
     repo();
     expect(await specflow(...argv)).toEqual({ code, stdout: "", stderr: `specflow: ${message}\n` });
@@ -232,8 +271,49 @@ describe("specflow run", () => {
           messageFile: "<root>/.git/SPECFLOW_MSG",
           files: ["src/auth/lockout.ts", ".specs/accounts/tasks.md"],
         },
+        specEdits: [],
+        outOfScope: [],
+        specNotes: [],
       },
     });
+  });
+});
+
+describe("specflow run scope and spec notes", () => {
+  // task-run/R11, R12
+  it("flags unplanned files and spec edits, keeps spec edits unstaged, and prints spec notes", async () => {
+    repo();
+    const result = await specflow("run", "accounts/T3", "--harness", "sprawl");
+    expect(result.code).toBe(0);
+    expect(result.stdout).toMatchSnapshot();
+    expect(git("diff", "--cached", "--name-only").trim().split("\n")).toEqual([
+      ".specs/accounts/tasks.md",
+      "src/auth/lockout.ts",
+      "src/billing.ts",
+    ]);
+    expect(git("diff", "--name-only").trim()).toBe(".specs/accounts/requirements.md");
+    expect(readFileSync(join(dir, ".git/SPECFLOW_MSG"), "utf8")).toBe(
+      "feat(accounts): Add lockout counter\n\nAdded the lockout counter.\n\nSpec-Feature: accounts\nSpec-Task: T3\nSpec-Req: R2\n",
+    );
+  });
+
+  it("reports scope and spec notes in the --json result", async () => {
+    repo();
+    const lines = (await specflow("run", "accounts/T3", "--harness", "sprawl", "--json")).stdout.trimEnd().split("\n");
+    expect(JSON.parse(lines.at(-1)!).result).toMatchObject({
+      outOfScope: ["src/billing.ts"],
+      specEdits: [".specs/accounts/requirements.md"],
+      specNotes: ["R2 does not say when the counter resets.", "design.md: memory store is lost on restart."],
+    });
+  });
+
+  it("records nothing when the harness only edited specs", async () => {
+    repo();
+    const result = await specflow("run", "accounts/T3", "--harness", "spec-only");
+    expect(result.stdout).toContain("No files changed, so nothing was recorded");
+    expect(result.stdout).toContain("left unstaged for review:\n  .specs/accounts/design.md");
+    expect(tasksMd()).toBe(originalTasks());
+    expect(git("diff", "--cached", "--name-only")).toBe("");
   });
 });
 
@@ -293,7 +373,7 @@ describe("specflow harness check", () => {
   it("uses harness.default from config, also outside a spec repo", async () => {
     repo();
     const result = await specflow("harness", "check");
-    expect(result.stderr).toBe('specflow: Unknown harness "claude-code". Registered: fails, hang, missing, test\n');
+    expect(result.stderr).toBe('specflow: Unknown harness "claude-code". Registered: fails, hang, missing, spec-only, sprawl, test\n');
     rmSync(join(dir, ".specs"), { recursive: true });
     expect(existsSync(join(dir, ".specs"))).toBe(false);
     expect((await specflow("harness", "check")).stderr).toContain('Unknown harness "claude-code"');

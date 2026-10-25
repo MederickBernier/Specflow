@@ -106,7 +106,7 @@ depends: T5
 `checkScope` sorts changed files into spec edits and out-of-scope files using the task's `files:` globs.
 
 ## T16: Run reports scope and spec notes [R11, R12]
-status: todo
+status: done
 files: packages/cli/src/commands/run.ts
 depends: T10, T13, T14, T15
 
