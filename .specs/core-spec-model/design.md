@@ -135,7 +135,14 @@ A Node implementation lives in `core/node`. Tests use an in-memory implementatio
 
 - `specflow init [--force]`
 - `specflow lint [--json]`, exit code 1 when any error is found
-- `specflow show <feature>[/<id>] [--json]`
+- `specflow show <feature>[/<id>] [--json]`, exit code 1 when the target does not exist
+
+Shared by every command:
+
+- Exit codes: 0 success (warnings allowed), 1 the command's own failure, 2 specs could not be loaded or bad usage.
+- Paths in text and JSON are relative to the repo root, with forward slashes.
+- JSON output is one document with a `schema` field (`specflow.lint/v1`, `specflow.show/v1`); failures print `{ schema, error: { kind, message } }`.
+- Commands take an injected `Io` (cwd, `FileSystem`, stdout, stderr), so tests run them in-process against the fixture repos.
 
 ## Alternatives considered
 

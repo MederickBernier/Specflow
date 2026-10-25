@@ -5,12 +5,15 @@
   "bin": {
     "specflow": "./dist/index.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "@specflow/adapter-claude-code": "workspace:*",
-    "@specflow/core": "workspace:*"
+    "@specflow/core": "workspace:*",
+    "commander": "^15.0.0"
   }
 }

@@ -23,3 +23,4 @@ export { parseRequirements } from "./parse/requirements.js";
 export { parseTasks } from "./parse/tasks.js";
 export type { LintRule } from "./lint/lint.js";
 export { lint, lintRules } from "./lint/lint.js";
+export { fullRef, resolveRef } from "./lint/refs.js";

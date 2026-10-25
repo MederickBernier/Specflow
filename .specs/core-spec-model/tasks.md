@@ -56,8 +56,8 @@ depends: T7, T2
 Each broken fixture produces exactly its expected finding; the clean fixture produces none.
 
 ## T9: CLI lint and show commands [R5]
-status: todo
-files: packages/cli/src/commands/lint.ts, packages/cli/src/commands/show.ts
+status: done
+files: packages/cli/src/commands/lint.ts, packages/cli/src/commands/show.ts, packages/cli/src/program.ts, packages/cli/src/output.ts, packages/cli/src/index.ts
 depends: T8
 
 Text and `--json` output covered by snapshots, exit code 1 on errors.

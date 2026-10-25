@@ -1,0 +1,443 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`specflow lint > exits 0 when there are only warnings 1`] = `
+".specs/billing/requirements.md:11: warning orphan-requirement: Approved requirement R2 has no task
+
+0 errors, 1 warning
+"
+`;
+
+exports[`specflow lint > exits 1 on the dependency-cycle fixture > json 1`] = `
+"{
+  "schema": "specflow.lint/v1",
+  "root": "<root>",
+  "summary": {
+    "errors": 1,
+    "warnings": 0,
+    "infos": 0
+  },
+  "findings": [
+    {
+      "rule": "dependency-cycle",
+      "severity": "error",
+      "message": "Dependency cycle: accounts/T1 -> accounts/T3 -> accounts/T2 -> accounts/T1",
+      "location": {
+        "file": ".specs/accounts/tasks.md",
+        "startLine": 3,
+        "endLine": 3
+      },
+      "feature": "accounts",
+      "id": "T1"
+    }
+  ]
+}
+"
+`;
+
+exports[`specflow lint > exits 1 on the dependency-cycle fixture > text 1`] = `
+".specs/accounts/tasks.md:3: error dependency-cycle: Dependency cycle: accounts/T1 -> accounts/T3 -> accounts/T2 -> accounts/T1
+
+1 error, 0 warnings
+"
+`;
+
+exports[`specflow lint > exits 1 on the duplicate-id fixture > json 1`] = `
+"{
+  "schema": "specflow.lint/v1",
+  "root": "<root>",
+  "summary": {
+    "errors": 1,
+    "warnings": 0,
+    "infos": 0
+  },
+  "findings": [
+    {
+      "rule": "duplicate-id",
+      "severity": "error",
+      "message": "Duplicate requirement ID R1 in billing, first defined on line 3",
+      "location": {
+        "file": ".specs/billing/requirements.md",
+        "startLine": 11,
+        "endLine": 11
+      },
+      "feature": "billing",
+      "id": "R1"
+    }
+  ]
+}
+"
+`;
+
+exports[`specflow lint > exits 1 on the duplicate-id fixture > text 1`] = `
+".specs/billing/requirements.md:11: error duplicate-id: Duplicate requirement ID R1 in billing, first defined on line 3
+
+1 error, 0 warnings
+"
+`;
+
+exports[`specflow lint > exits 1 on the malformed-heading fixture > json 1`] = `
+"{
+  "schema": "specflow.lint/v1",
+  "root": "<root>",
+  "summary": {
+    "errors": 1,
+    "warnings": 0,
+    "infos": 0
+  },
+  "findings": [
+    {
+      "rule": "malformed-heading",
+      "severity": "error",
+      "message": "Heading \\"R3 Remember me\\" looks like an ID but does not match \\"## R<n>: <title>\\"",
+      "location": {
+        "file": ".specs/accounts/requirements.md",
+        "startLine": 29,
+        "endLine": 29
+      },
+      "feature": "accounts"
+    }
+  ]
+}
+"
+`;
+
+exports[`specflow lint > exits 1 on the malformed-heading fixture > text 1`] = `
+".specs/accounts/requirements.md:29: error malformed-heading: Heading "R3 Remember me" looks like an ID but does not match "## R<n>: <title>"
+
+1 error, 0 warnings
+"
+`;
+
+exports[`specflow lint > exits 1 on the unknown-ref fixture > json 1`] = `
+"{
+  "schema": "specflow.lint/v1",
+  "root": "<root>",
+  "summary": {
+    "errors": 1,
+    "warnings": 0,
+    "infos": 0
+  },
+  "findings": [
+    {
+      "rule": "unknown-ref",
+      "severity": "error",
+      "message": "Task T1 references unknown requirement R7",
+      "location": {
+        "file": ".specs/billing/tasks.md",
+        "startLine": 3,
+        "endLine": 3
+      },
+      "feature": "billing",
+      "id": "T1"
+    }
+  ]
+}
+"
+`;
+
+exports[`specflow lint > exits 1 on the unknown-ref fixture > text 1`] = `
+".specs/billing/tasks.md:3: error unknown-ref: Task T1 references unknown requirement R7
+
+1 error, 0 warnings
+"
+`;
+
+exports[`specflow show > shows accounts > json 1`] = `
+"{
+  "schema": "specflow.show/v1",
+  "kind": "feature",
+  "feature": {
+    "name": "accounts",
+    "dir": ".specs/accounts",
+    "requirements": [
+      {
+        "id": "R1",
+        "title": "Sign in with email",
+        "status": "approved",
+        "priority": "must",
+        "location": {
+          "file": ".specs/accounts/requirements.md",
+          "startLine": 5,
+          "endLine": 19
+        }
+      },
+      {
+        "id": "R2",
+        "title": "Lock out after failed attempts",
+        "status": "approved",
+        "priority": "should",
+        "location": {
+          "file": ".specs/accounts/requirements.md",
+          "startLine": 21,
+          "endLine": 27
+        }
+      },
+      {
+        "id": "R3",
+        "title": "Remember me",
+        "status": "draft",
+        "priority": "could",
+        "location": {
+          "file": ".specs/accounts/requirements.md",
+          "startLine": 29,
+          "endLine": 33
+        }
+      },
+      {
+        "id": "R4",
+        "title": "Magic link sign-in",
+        "status": "removed",
+        "location": {
+          "file": ".specs/accounts/requirements.md",
+          "startLine": 35,
+          "endLine": 38
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "id": "T1",
+        "title": "Set up the auth module",
+        "status": "done",
+        "reqs": [],
+        "location": {
+          "file": ".specs/accounts/tasks.md",
+          "startLine": 3,
+          "endLine": 7
+        }
+      },
+      {
+        "id": "T2",
+        "title": "Sign-in endpoint",
+        "status": "done",
+        "reqs": [
+          "R1"
+        ],
+        "location": {
+          "file": ".specs/accounts/tasks.md",
+          "startLine": 9,
+          "endLine": 14
+        }
+      },
+      {
+        "id": "T3",
+        "title": "Add lockout counter",
+        "status": "todo",
+        "reqs": [
+          "R2"
+        ],
+        "location": {
+          "file": ".specs/accounts/tasks.md",
+          "startLine": 16,
+          "endLine": 21
+        }
+      }
+    ],
+    "design": {
+      "location": {
+        "file": ".specs/accounts/design.md",
+        "startLine": 1,
+        "endLine": 3
+      }
+    }
+  }
+}
+"
+`;
+
+exports[`specflow show > shows accounts > text 1`] = `
+"accounts (.specs/accounts)
+
+Requirements
+  R1  approved  must    Sign in with email
+  R2  approved  should  Lock out after failed attempts
+  R3  draft     could   Remember me
+  R4  removed   -       Magic link sign-in
+
+Tasks
+  T1  done  []    Set up the auth module
+  T2  done  [R1]  Sign-in endpoint
+  T3  todo  [R2]  Add lockout counter
+
+Design: .specs/accounts/design.md:1-3
+"
+`;
+
+exports[`specflow show > shows accounts/R1 > json 1`] = `
+"{
+  "schema": "specflow.show/v1",
+  "kind": "requirement",
+  "requirement": {
+    "feature": "accounts",
+    "id": "R1",
+    "title": "Sign in with email",
+    "priority": "must",
+    "status": "approved",
+    "body": "Users sign in with their email and password.\\n\\n### Notes\\n\\nFree-form content inside an item belongs to that item.\\n\\n- Given a registered user\\n- When they submit the right password\\n- Then they are signed in\\n- And a session cookie is set",
+    "criteria": [
+      {
+        "keyword": "Given",
+        "text": "a registered user"
+      },
+      {
+        "keyword": "When",
+        "text": "they submit the right password"
+      },
+      {
+        "keyword": "Then",
+        "text": "they are signed in"
+      },
+      {
+        "keyword": "And",
+        "text": "a session cookie is set"
+      }
+    ],
+    "extra": {
+      "owner": "someone"
+    },
+    "location": {
+      "file": ".specs/accounts/requirements.md",
+      "startLine": 5,
+      "endLine": 19
+    }
+  },
+  "tasks": [
+    {
+      "feature": "accounts",
+      "id": "T2",
+      "title": "Sign-in endpoint",
+      "status": "done"
+    }
+  ]
+}
+"
+`;
+
+exports[`specflow show > shows accounts/R1 > text 1`] = `
+"accounts/R1: Sign in with email
+priority: must
+status: approved
+owner: someone
+location: .specs/accounts/requirements.md:5-19
+
+Users sign in with their email and password.
+
+### Notes
+
+Free-form content inside an item belongs to that item.
+
+- Given a registered user
+- When they submit the right password
+- Then they are signed in
+- And a session cookie is set
+
+Tasks
+  accounts/T2  done  Sign-in endpoint
+"
+`;
+
+exports[`specflow show > shows accounts/T2 > json 1`] = `
+"{
+  "schema": "specflow.show/v1",
+  "kind": "task",
+  "task": {
+    "feature": "accounts",
+    "id": "T2",
+    "title": "Sign-in endpoint",
+    "reqs": [
+      "R1"
+    ],
+    "status": "done",
+    "files": [
+      "src/auth/login.ts"
+    ],
+    "depends": [
+      "T1"
+    ],
+    "body": "Right password signs in, wrong password does not.",
+    "extra": {},
+    "location": {
+      "file": ".specs/accounts/tasks.md",
+      "startLine": 9,
+      "endLine": 14
+    }
+  },
+  "requirements": [
+    {
+      "ref": "R1",
+      "feature": "accounts",
+      "id": "R1",
+      "title": "Sign in with email",
+      "status": "approved"
+    }
+  ]
+}
+"
+`;
+
+exports[`specflow show > shows accounts/T2 > text 1`] = `
+"accounts/T2: Sign-in endpoint [R1]
+status: done
+files: src/auth/login.ts
+depends: T1
+location: .specs/accounts/tasks.md:9-14
+
+Right password signs in, wrong password does not.
+
+Requirements
+  R1  approved  Sign in with email
+"
+`;
+
+exports[`specflow show > shows billing/T1 > json 1`] = `
+"{
+  "schema": "specflow.show/v1",
+  "kind": "task",
+  "task": {
+    "feature": "billing",
+    "id": "T1",
+    "title": "Pay endpoint",
+    "reqs": [
+      "R1"
+    ],
+    "status": "todo",
+    "files": [
+      "src/billing/pay.ts"
+    ],
+    "depends": [
+      "accounts/T2"
+    ],
+    "body": "Paying with a valid cart creates a paid order.",
+    "extra": {},
+    "location": {
+      "file": ".specs/billing/tasks.md",
+      "startLine": 3,
+      "endLine": 8
+    }
+  },
+  "requirements": [
+    {
+      "ref": "R1",
+      "feature": "billing",
+      "id": "R1",
+      "title": "Pay for an order",
+      "status": "approved"
+    }
+  ]
+}
+"
+`;
+
+exports[`specflow show > shows billing/T1 > text 1`] = `
+"billing/T1: Pay endpoint [R1]
+status: todo
+files: src/billing/pay.ts
+depends: accounts/T2
+location: .specs/billing/tasks.md:3-8
+
+Paying with a valid cart creates a paid order.
+
+Requirements
+  R1  approved  Pay for an order
+"
+`;
