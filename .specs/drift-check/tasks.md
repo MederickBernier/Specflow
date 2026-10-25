@@ -29,7 +29,7 @@ depends: T2, T3, T1
 Matches its fixture exactly, no findings on the clean fixture.
 
 ## T5: Rules spec-changed-since-code and unimplemented [R2, R3, R7]
-status: todo
+status: done
 files: packages/core/src/drift/rules/spec-changed.ts, packages/core/src/drift/rules/unimplemented.ts
 depends: T3, T1
 
