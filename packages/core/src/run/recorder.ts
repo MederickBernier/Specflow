@@ -48,7 +48,9 @@ export async function recordRun(
 ): Promise<Result<Recording, RecordError>> {
   if (run.cancelled) return ok({ mode: "skipped", reason: "cancelled" });
   if (!run.ok) return ok({ mode: "skipped", reason: "failed" });
-  if (run.files.length === 0) return ok({ mode: "skipped", reason: "no-changes" });
+  // The harness may report a file the caller also adds, such as tasks.md.
+  const files = [...new Set(run.files)];
+  if (files.length === 0) return ok({ mode: "skipped", reason: "no-changes" });
 
   const task = tree.features.find((f) => f.name === target.feature)?.tasks.find((t) => t.id === target.task);
   if (!task) return err({ kind: "unknown-task", message: `No task ${fullRef(target.feature, target.task)}` });
@@ -71,7 +73,7 @@ export async function recordRun(
   }
 
   // Literal pathspecs, so file names with * or [ are never globs.
-  const pathspec = run.files.map((file) => `:(literal)${file}`);
+  const pathspec = files.map((file) => `:(literal)${file}`);
   const added = await git(["add", "-A", "--", ...pathspec]);
   if (!added.ok) return err({ kind: "git-failed", message: added.error.message });
 
@@ -80,12 +82,12 @@ export async function recordRun(
     if (!gitDir.ok) return err({ kind: "git-failed", message: gitDir.error.message });
     const messageFile = joinPath(toPosixPath(gitDir.value.trim()), messageFileName);
     await deps.fs.writeFile(messageFile, message);
-    return ok({ mode: "staged", message, messageFile, files: run.files });
+    return ok({ mode: "staged", message, messageFile, files });
   }
 
   const committed = await git(["commit", "--quiet", "-F", "-", "--", ...pathspec], message);
   if (!committed.ok) return err({ kind: "git-failed", message: committed.error.message });
   const head = await git(["rev-parse", "HEAD"]);
   if (!head.ok) return err({ kind: "git-failed", message: head.error.message });
-  return ok({ mode: "auto", message, commit: head.value.trim(), files: run.files });
+  return ok({ mode: "auto", message, commit: head.value.trim(), files });
 }

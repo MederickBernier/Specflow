@@ -111,6 +111,13 @@ describe("recordRun", () => {
     expect(git("status", "--porcelain").trim()).toBe("?? src/auth/i.ts");
   });
 
+  it("records each file once when it is listed twice", async () => {
+    const tree = await repo("staged");
+    changeFiles();
+    const result = await recordRun(deps(), tree, t3, success(["src/auth/login.ts", "src/auth/login.ts"]));
+    expect(result.ok && result.value.mode === "staged" && result.value.files).toEqual(["src/auth/login.ts"]);
+  });
+
   it("writes Spec-Req: none for a task with no requirements, and no body without a summary", async () => {
     const tree = await repo("auto");
     writeFileSync(join(dir, "src/auth/index.ts"), "// setup\n");
