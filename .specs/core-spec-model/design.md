@@ -77,7 +77,11 @@ type Finding = {
 - Heading regex: `^(R|T)(\d+):\s*(.+?)(?:\s*\[([^\]]*)\])?$`, prefixes taken from config.
 - Metadata: the first consecutive lines matching `^([a-z][a-z-]*):\s*(.*)$` right after the heading. Known keys map to fields, others go to `extra`.
 - Criteria: list items whose text starts with `Given`, `When`, `Then`, `And` (case-insensitive).
-- A level 2 heading that starts with the ID prefix but fails the regex produces a `malformed-heading` finding and is skipped.
+- A level 2 heading that starts with the ID prefix and a digit (`R3 ...`) but fails the regex produces a `malformed-heading` finding and is skipped. Other level 2 headings (`## Requirements overview`) are not items but still end the item before them.
+- Markdown is parsed with `mdast-util-from-markdown`, the parser behind `remark-parse`. Titles and criteria text are sliced from the source, so inline markdown such as backticks is kept.
+- Metadata must start on the line directly after the heading. `body` is the rest of the item with leading blank lines removed. An item's `endLine` is its last non-blank line.
+- A missing or unrecognized `status` becomes `draft`, an unrecognized `priority` is left unset, and the raw value goes to `extra`, so a typo never breaks parsing.
+- Shared splitting lives in `parse/items.ts`; the requirements and tasks parsers only map metadata to fields. Parsers return `{ items, findings }`, where `findings` holds `malformed-heading`.
 
 ## Lint
 

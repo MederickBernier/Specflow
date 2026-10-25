@@ -28,8 +28,8 @@ depends: T3
 Missing file returns defaults, invalid values return an error naming the key.
 
 ## T5: Parse requirements files [R1, R4, R8]
-status: todo
-files: packages/core/src/parse/requirements.ts
+status: done
+files: packages/core/src/parse/requirements.ts, packages/core/src/parse/items.ts
 depends: T3
 
 Unit tests cover metadata, criteria, unknown keys and line ranges.
