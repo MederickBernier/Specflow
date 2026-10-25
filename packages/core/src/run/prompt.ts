@@ -13,9 +13,11 @@ export type PromptError = {
 /**
  * Builds the prompt sent to the harness for one task: the steering files
  * (`product.md`, `tech.md`), the task's own text, the full text of each
- * requirement it references, its feature's `design.md`, and the instruction
- * to work on this task only. Nothing from other features is included, except
- * requirements the task references there explicitly (`other/R1`).
+ * requirement it references, its feature's `design.md`, the feature's other
+ * open tasks marked out of scope, and the instructions: this task only, no
+ * spec edits (specflow owns the status line), and spec notes at the end.
+ * Nothing from other features is included, except requirements the task
+ * references there explicitly (`other/R1`).
  *
  * Item text is copied from the source files by line range, so the harness
  * sees exactly what is written. Missing steering or design files and empty
@@ -73,11 +75,18 @@ export async function buildTaskPrompt(
   }
   if (feature.design) sections.push(block("design", feature.design.markdown.replace(/\r\n?/g, "\n").trim()));
 
+  const open = feature.tasks.filter((t) => t.id !== task.id && t.status !== "done");
+  if (open.length > 0) {
+    const list = open.map((t) => `- ${t.id}: ${t.title}`).join("\n");
+    sections.push(block("out-of-scope", `Other open tasks in this feature, each done in its own run:\n${list}`));
+  }
+
   sections.push(
     [
-      "Work on this task only. Do not edit files under " +
-        `${tree.config.specsDir}/ except to set this task's status.`,
+      "Work on this task only; leave the out-of-scope tasks for their own runs.",
+      `Do not edit files under ${tree.config.specsDir}/; specflow updates this task's status.`,
       "If the design cannot work as written, stop and explain why.",
+      'If you found problems in the spec or made decisions it does not cover, end your final reply with a "Spec notes:" section listing them as bullets.',
     ].join("\n"),
   );
 

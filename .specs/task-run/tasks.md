@@ -85,7 +85,7 @@ depends: core-spec-model/T3
 Interfaces from the design compile; Node implementations in `core/node` pass an integration test against a temp git repo; in-memory fakes exist for tests. No other `core` module imports `core/node`.
 
 ## T13: Prompt scope, status ownership and spec notes request [R3, R7]
-status: todo
+status: done
 files: packages/core/src/run/prompt.ts
 depends: T4
 

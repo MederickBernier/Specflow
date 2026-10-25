@@ -43,7 +43,9 @@ status: approved
 Sessions are signed cookies. The lockout counter lives in memory, keyed by email.
 </design>
 
-Work on this task only. Do not edit files under .specs/ except to set this task's status.
+Work on this task only; leave the out-of-scope tasks for their own runs.
+Do not edit files under .specs/; specflow updates this task's status.
 If the design cannot work as written, stop and explain why.
+If you found problems in the spec or made decisions it does not cover, end your final reply with a "Spec notes:" section listing them as bullets.
 "
 `;

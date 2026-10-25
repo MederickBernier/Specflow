@@ -35,7 +35,7 @@ describe("buildTaskPrompt", () => {
 
   it("includes each section once, in order", async () => {
     const prompt = await cleanPrompt("accounts", "T3");
-    const order = ["<steering>", '<task id="accounts/T3">', "<requirements>", '<requirement id="accounts/R2">', "<design>", "Work on this task only."];
+    const order = ["<steering>", '<task id="accounts/T3">', "<requirements>", '<requirement id="accounts/R2">', "<design>", "Work on this task only;"];
     const positions = order.map((marker) => prompt.indexOf(marker));
     expect(positions.every((p) => p >= 0)).toBe(true);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
@@ -46,6 +46,8 @@ describe("buildTaskPrompt", () => {
     expect(prompt).toContain("The lockout counter lives in memory");
     expect(prompt).toContain("If the design cannot work as written, stop and explain why.");
     expect(prompt.endsWith("\n")).toBe(true);
+    // accounts/T1 and T2 are done, so nothing is out of scope.
+    expect(prompt).not.toContain("<out-of-scope>");
   });
 
   it("includes only the requirements the task references", async () => {
@@ -53,6 +55,35 @@ describe("buildTaskPrompt", () => {
     expect(prompt).not.toContain("## R1:");
     expect(prompt).not.toContain("## R3:");
     expect(prompt).not.toContain("## T2:");
+  });
+
+  // task-run/R3: other open tasks are named as out of scope, by ID and title only.
+  it("lists the feature's other open tasks as out of scope", async () => {
+    const result = await memoryPrompt(
+      {
+        "a/tasks.md":
+          "## T1: Done already []\nstatus: done\n\n## T2: This one []\n\n## T3: Later [R1]\nstatus: todo\n\nLater body.\n\n## T4: Blocked []\nstatus: blocked\n",
+        "a/requirements.md": "## R1: Req\nstatus: approved\n",
+        "b/tasks.md": "## T1: Other feature []\n",
+      },
+      "a",
+      "T2",
+    );
+    if (!result.ok) throw new Error(result.error.message);
+    expect(result.value).toContain(
+      "<out-of-scope>\nOther open tasks in this feature, each done in its own run:\n- T3: Later\n- T4: Blocked\n</out-of-scope>",
+    );
+    expect(result.value).not.toContain("Done already");
+    expect(result.value).not.toContain("Later body.");
+    expect(result.value).not.toContain("Other feature");
+  });
+
+  // task-run/R3, R7: no spec edits, specflow owns the status; spec notes requested.
+  it("forbids spec edits and asks for spec notes", async () => {
+    const prompt = await cleanPrompt("accounts", "T3");
+    expect(prompt).toContain("Do not edit files under .specs/; specflow updates this task's status.");
+    expect(prompt).not.toContain("except to set this task's status");
+    expect(prompt).toContain('end your final reply with a "Spec notes:" section');
   });
 
   // task-run/R3: other features' specs never appear.
@@ -88,14 +119,16 @@ describe("buildTaskPrompt", () => {
     expect(result.value).not.toContain("Auth design.");
   });
 
-  it("leaves out missing steering and design files", async () => {
+  it("leaves out missing steering and design files, and an empty out-of-scope list", async () => {
     const result = await memoryPrompt({ "a/tasks.md": "## T1: Lone task []\n\nDo it.\n" }, "a", "T1");
     expect(result).toEqual({
       ok: true,
       value:
         '<task id="a/T1">\n## T1: Lone task []\n\nDo it.\n</task>\n\n' +
-        "Work on this task only. Do not edit files under .specs/ except to set this task's status.\n" +
-        "If the design cannot work as written, stop and explain why.\n",
+        "Work on this task only; leave the out-of-scope tasks for their own runs.\n" +
+        "Do not edit files under .specs/; specflow updates this task's status.\n" +
+        "If the design cannot work as written, stop and explain why.\n" +
+        'If you found problems in the spec or made decisions it does not cover, end your final reply with a "Spec notes:" section listing them as bullets.\n',
     });
   });
 
@@ -108,7 +141,7 @@ describe("buildTaskPrompt", () => {
     const tree = await loadSpecTree(fs, "/repo");
     if (!tree.ok) throw new Error(tree.error.message);
     const result = await buildTaskPrompt(fs, tree.value, { feature: "a", task: "T1" });
-    expect(result.ok && result.value).toContain("Do not edit files under docs/specs/ except");
+    expect(result.ok && result.value).toContain("Do not edit files under docs/specs/; specflow");
   });
 
   it("fails on an unknown task", async () => {
