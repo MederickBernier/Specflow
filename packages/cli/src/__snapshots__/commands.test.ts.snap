@@ -1,0 +1,31 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`specflow run > restores the task status and records nothing when the run fails 1`] = `
+"Running accounts/T3 with replay
+
+Running the tests first.
+
+  $ pnpm test (exit 1)
+  ! error: Tests fail before any change; stopping.
+
+Failed.
+Task status restored. Changes made during the run are left in place.
+"
+`;
+
+exports[`specflow run > runs a task, streams its events and stages the result 1`] = `
+"Running accounts/T3 with test
+
+Adding the lockout counter.
+
+  > Write src/auth/lockout.ts
+  + src/auth/lockout.ts
+  $ pnpm test (exit 0)
+
+Usage: 12,400 tokens in, 1,830 out, $0.07, 48.3 s
+
+Finished.
+Staged 2 files and marked the task done. Review, then commit with:
+  git commit -F .git/SPECFLOW_MSG
+"
+`;

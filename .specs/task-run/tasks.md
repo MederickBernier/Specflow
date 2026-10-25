@@ -64,7 +64,7 @@ depends: T7
 Fixture repo with commits, a rebase, and commits without trailers; trace returns the expected list newest first.
 
 ## T10: CLI run, trace and harness check [R4, R8]
-status: todo
+status: done
 files: packages/cli/src/commands/run.ts, packages/cli/src/commands/trace.ts, packages/cli/src/commands/harness.ts
 depends: T6, T7, T8, T9
 

@@ -1,19 +1,27 @@
-import type { FileSystem } from "@specflow/core";
+import type { AdapterRegistry, Clock, FileSystem, Git } from "@specflow/core";
 import { Command, CommanderError } from "commander";
+import { harnessCheckCommand } from "./commands/harness.js";
 import { initCommand } from "./commands/init.js";
 import { lintCommand } from "./commands/lint.js";
+import { runCommand } from "./commands/run.js";
 import { showCommand } from "./commands/show.js";
+import { traceCommand } from "./commands/trace.js";
 
 /** Everything a command touches outside itself, injected so tests run in-process. */
 export type Io = {
   cwd: string;
   fs: FileSystem;
+  git: Git;
+  registry: AdapterRegistry;
+  clock: Clock;
   stdout: (text: string) => void;
   stderr: (text: string) => void;
+  /** Calls `handler` on Ctrl+C until the returned function is called. */
+  onInterrupt: (handler: () => void) => () => void;
 };
 
-/** Exit codes shared by every command. */
-export const exitCodes = { ok: 0, failed: 1, unusable: 2 } as const;
+/** Exit codes shared by every command. `cancelled` follows the shell convention for Ctrl+C. */
+export const exitCodes = { ok: 0, failed: 1, unusable: 2, cancelled: 130 } as const;
 
 /** Parses `argv` (without the node and script entries), runs the command and returns its exit code. */
 export async function run(argv: string[], io: Io): Promise<number> {
@@ -47,6 +55,44 @@ export async function run(argv: string[], io: Io): Promise<number> {
     .option("--json", "print machine-readable output")
     .action(async (target: string, options: { json?: boolean }) => {
       code = await showCommand(io, target, { json: options.json ?? false });
+    });
+
+  program
+    .command("run")
+    .description("Run one task through the agent harness and record the result in git")
+    .argument("<task>", "feature/task, such as auth/T3")
+    .option("--harness <name>", "adapter to use instead of harness.default")
+    .option("--allow-dirty", "run even with uncommitted changes outside the specs folder")
+    .option("--json", "print one JSON object per line")
+    .action(async (target: string, options: { harness?: string; allowDirty?: boolean; json?: boolean }) => {
+      code = await runCommand(io, target, {
+        ...(options.harness !== undefined && { harness: options.harness }),
+        allowDirty: options.allowDirty ?? false,
+        json: options.json ?? false,
+      });
+    });
+
+  program
+    .command("trace")
+    .description("List the tasks and commits that implement a feature, requirement or task")
+    .argument("<target>", "feature, or feature/ID such as auth/R3")
+    .option("--json", "print machine-readable output")
+    .action(async (target: string, options: { json?: boolean }) => {
+      code = await traceCommand(io, target, { json: options.json ?? false });
+    });
+
+  program
+    .command("harness")
+    .description("Inspect the agent harness")
+    .command("check")
+    .description("Check that the harness is installed and signed in")
+    .option("--harness <name>", "adapter to check instead of harness.default")
+    .option("--json", "print machine-readable output")
+    .action(async (options: { harness?: string; json?: boolean }) => {
+      code = await harnessCheckCommand(io, {
+        ...(options.harness !== undefined && { harness: options.harness }),
+        json: options.json ?? false,
+      });
     });
 
   try {

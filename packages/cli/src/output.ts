@@ -23,6 +23,11 @@ export function writeJson(io: Io, value: unknown): void {
   io.stdout(`${JSON.stringify(value, null, 2)}\n`);
 }
 
+/** Writes `value` as one line of JSON, for streams with one object per line. */
+export function writeJsonLine(io: Io, value: unknown): void {
+  io.stdout(`${JSON.stringify(value)}\n`);
+}
+
 /** Pads every column but the last to the width of its longest cell. */
 export function table(rows: string[][], indent = "  "): string {
   const widths = rows.reduce<number[]>(
@@ -38,11 +43,16 @@ export function table(rows: string[][], indent = "  "): string {
  * Loads the spec tree from `io.cwd`. On failure, reports the error (as JSON
  * with `schema` when `json` is set) and returns the exit code instead.
  */
-export async function loadOrReport(io: Io, schema: string, json: boolean): Promise<SpecTree | number> {
+export async function loadOrReport(
+  io: Io,
+  schema: string,
+  json: boolean,
+  write: (io: Io, value: unknown) => void = writeJson,
+): Promise<SpecTree | number> {
   const result = await loadSpecTree(io.fs, io.cwd);
   if (result.ok) return result.value;
   if (json) {
-    writeJson(io, { schema, error: { kind: result.error.kind, message: result.error.message } });
+    write(io, { schema, error: { kind: result.error.kind, message: result.error.message } });
   } else {
     io.stderr(`specflow: ${result.error.message}\n`);
   }

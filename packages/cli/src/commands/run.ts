@@ -1,0 +1,155 @@
+import {
+  changedFiles,
+  type Recording,
+  recordRun,
+  restoreTaskStatus,
+  type RunEvent,
+  setTaskStatus,
+  startRun,
+  tasksFile,
+} from "@specflow/core";
+import { loadOrReport, relativePath, writeJsonLine } from "../output.js";
+import { exitCodes, type Io } from "../program.js";
+
+/** JSON schema ID of each line of `specflow run --json`. Bump the version on breaking changes. */
+export const runSchema = "specflow.run/v1";
+
+/**
+ * `specflow run <feature>/<task>`: runs one task, streaming its events. On
+ * success the task becomes `done` and the result is recorded per
+ * `commit.mode`; on failure or cancel its status is restored. Ctrl+C cancels.
+ */
+export async function runCommand(
+  io: Io,
+  target: string,
+  options: { harness?: string; allowDirty: boolean; json: boolean },
+): Promise<number> {
+  const tree = await loadOrReport(io, runSchema, options.json, writeJsonLine);
+  if (typeof tree === "number") return tree;
+  const fail = (kind: string, message: string, code: number = exitCodes.failed) => {
+    if (options.json) writeJsonLine(io, { schema: runSchema, error: { kind, message } });
+    else io.stderr(`specflow: ${message}\n`);
+    return code;
+  };
+
+  const [feature, task, extra] = target.split("/");
+  if (!feature || !task || extra !== undefined) {
+    return fail("bad-target", `Expected <feature>/<task>, such as auth/T3, not "${target}"`, exitCodes.unusable);
+  }
+
+  const controller = new AbortController();
+  const handle = await startRun(
+    { fs: io.fs, git: io.git, registry: io.registry, clock: io.clock },
+    tree,
+    { feature, task, ...(options.harness !== undefined && { harness: options.harness }), allowDirty: options.allowDirty },
+    controller.signal,
+  );
+  if (!handle.ok) {
+    const install = handle.error.kind === "harness-unavailable" && handle.error.check.installUrl;
+    return fail(handle.error.kind, install ? `${handle.error.message}\nSee ${install}` : handle.error.message);
+  }
+
+  const status = await setTaskStatus(io.fs, tree, { feature, task }, "doing");
+  if (!status.ok) return fail(status.error.kind, status.error.message);
+  const snapshot = status.value;
+
+  for (const warning of handle.value.warnings) {
+    if (options.json) writeJsonLine(io, { schema: runSchema, warning });
+    else io.stderr(`specflow: warning: ${warning}\n`);
+  }
+
+  const stopListening = io.onInterrupt(() => {
+    if (!options.json) io.stderr("\nCancelling... (press Ctrl+C again to quit now)\n");
+    controller.abort();
+  });
+  const events: RunEvent[] = [];
+  try {
+    for await (const event of handle.value.events) {
+      events.push(event);
+      if (options.json) writeJsonLine(io, { schema: runSchema, event });
+      else io.stdout(renderEvent(event, `${feature}/${task}`));
+    }
+  } finally {
+    stopListening();
+  }
+
+  const finished = events.at(-1);
+  const ok = finished?.kind === "finished" && finished.ok;
+  const cancelled = finished?.kind === "finished" && finished.cancelled === true;
+  const files = changedFiles(events);
+
+  let recording: Recording | undefined;
+  if (ok && files.length > 0) {
+    await setTaskStatus(io.fs, tree, { feature, task }, "done");
+    const recorded = await recordRun({ git: io.git, fs: io.fs }, tree, { feature, task }, {
+      ok,
+      ...(finished.summary !== undefined && { summary: finished.summary }),
+      files: [...files, tasksFile(tree, feature)],
+    });
+    if (!recorded.ok) {
+      await restoreTaskStatus(io.fs, tree, snapshot);
+      return fail(recorded.error.kind, `The run succeeded but could not be recorded: ${recorded.error.message}`);
+    }
+    recording = recorded.value;
+  } else {
+    await restoreTaskStatus(io.fs, tree, snapshot);
+  }
+
+  if (options.json) {
+    writeJsonLine(io, { schema: runSchema, result: { ok, cancelled, files, recording: recording ?? null } });
+  } else {
+    io.stdout(renderOutcome(tree.root, { ok, cancelled, files, recording }));
+  }
+  if (cancelled) return exitCodes.cancelled;
+  return ok ? exitCodes.ok : exitCodes.failed;
+}
+
+const changeMarks = { added: "+", modified: "~", deleted: "-" } as const;
+
+function renderEvent(event: RunEvent, target: string): string {
+  switch (event.kind) {
+    case "started":
+      return `Running ${target} with ${event.harness}\n\n`;
+    case "message":
+      return `${event.text.trim()}\n\n`;
+    case "tool-call":
+      return `  > ${event.tool} ${event.summary}\n`;
+    case "file-changed":
+      return `  ${changeMarks[event.change]} ${event.path}\n`;
+    case "command":
+      return `  $ ${event.command}${event.exitCode === undefined ? "" : ` (exit ${event.exitCode})`}\n`;
+    case "usage": {
+      const parts = [
+        event.inputTokens !== undefined && `${event.inputTokens.toLocaleString("en-US")} tokens in`,
+        event.outputTokens !== undefined && `${event.outputTokens.toLocaleString("en-US")} out`,
+        event.costUsd !== undefined && `$${event.costUsd.toFixed(2)}`,
+        event.durationMs !== undefined && `${(event.durationMs / 1000).toFixed(1)} s`,
+      ].filter(Boolean);
+      return parts.length > 0 ? `\nUsage: ${parts.join(", ")}\n` : "";
+    }
+    case "error":
+      return `  ! ${event.fatal ? "error" : "warning"}: ${event.message}\n`;
+    case "finished":
+      return event.cancelled ? "\nCancelled.\n" : event.ok ? "\nFinished.\n" : "\nFailed.\n";
+  }
+}
+
+function renderOutcome(
+  root: string,
+  outcome: { ok: boolean; cancelled: boolean; files: string[]; recording: Recording | undefined },
+): string {
+  const { recording } = outcome;
+  if (outcome.cancelled) return "Task status restored. Changes made before cancelling are left in place.\n";
+  if (!outcome.ok) return "Task status restored. Changes made during the run are left in place.\n";
+  if (!recording) return "No files changed, so nothing was recorded and the task status was restored.\n";
+  if (recording.mode === "staged") {
+    return (
+      `Staged ${recording.files.length} files and marked the task done. Review, then commit with:\n` +
+      `  git commit -F ${relativePath(root, recording.messageFile)}\n`
+    );
+  }
+  if (recording.mode === "auto") {
+    return `Committed ${recording.commit.slice(0, 7)} with ${recording.files.length} files and marked the task done.\n`;
+  }
+  return "";
+}

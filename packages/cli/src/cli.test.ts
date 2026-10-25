@@ -2,12 +2,25 @@ import { mkdtemp, readFile, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { toPosixPath } from "@specflow/core";
-import { NodeFileSystem } from "@specflow/core/node";
+import { AdapterRegistry, FakeClock, toPosixPath } from "@specflow/core";
+import { NodeFileSystem, NodeGit } from "@specflow/core/node";
 import { afterEach, describe, expect, it } from "vitest";
 import { run } from "./program.js";
 
 const reposDir = toPosixPath(fileURLToPath(new URL("../../../fixtures/repos", import.meta.url)));
+
+function quietIo(cwd: string) {
+  return {
+    cwd,
+    fs: new NodeFileSystem(),
+    git: new NodeGit({ cwd }),
+    registry: new AdapterRegistry(),
+    clock: new FakeClock(),
+    stdout: () => {},
+    stderr: () => {},
+    onInterrupt: () => () => {},
+  };
+}
 
 // Runs the CLI in-process. Absolute fixture paths become <root> so snapshots match on every machine.
 async function specflow(fixture: string, ...argv: string[]) {
@@ -18,8 +31,7 @@ async function specflowIn(root: string, cwd: string, ...argv: string[]) {
   let stdout = "";
   let stderr = "";
   const code = await run(argv, {
-    cwd,
-    fs: new NodeFileSystem(),
+    ...quietIo(cwd),
     stdout: (text) => (stdout += text),
     stderr: (text) => (stderr += text),
   });
@@ -148,12 +160,7 @@ describe("specflow show", () => {
 describe("specflow", () => {
   it("exits 2 when no specs are found", async () => {
     let stderr = "";
-    const code = await run(["lint"], {
-      cwd: "/",
-      fs: new NodeFileSystem(),
-      stdout: () => {},
-      stderr: (text) => (stderr += text),
-    });
+    const code = await run(["lint"], { ...quietIo("/"), stderr: (text) => (stderr += text) });
     expect(code).toBe(2);
     expect(stderr).toBe("specflow: No .specs/ folder found at or above /\n");
   });

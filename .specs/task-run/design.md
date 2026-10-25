@@ -185,7 +185,9 @@ A targeted line edit on the task's `status:` line using the location from the sp
 
 - `specflow run <feature>/<task> [--harness name] [--allow-dirty] [--json]`, streams events, Ctrl+C cancels
 - `specflow trace <feature>[/<id>] [--json]`
-- `specflow harness check`
+- `specflow harness check [--harness name] [--json]`, works outside a spec repo with the default config
+
+`run` does: `startRun` checks, `doing`, stream events, then on success `done` and `recordRun` with the changed files plus `tasks.md`; on failure or cancel it restores the status snapshot. A successful run that changed no files records nothing and restores the status. Exit codes: 0 success, 1 failed run or pre-flight refusal, 2 bad target or unloadable specs, 130 cancelled. The first Ctrl+C cancels (the runner's 5 second grace applies); a second one quits at once. `run --json` prints one JSON object per line (`specflow.run/v1`): `warning` lines, one `event` line per `RunEvent`, then a `result` line with the recording. `trace --json` and `harness check --json` print one document (`specflow.trace/v1`, `specflow.harness/v1`).
 
 ## Alternatives considered
 
