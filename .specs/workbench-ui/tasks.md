@@ -1,8 +1,8 @@
 # workbench-ui: tasks
 
 ## T1: Webview build and panel shell [R1]
-status: todo
-files: packages/vscode/webview/**, packages/vscode/src/workbench/panel.ts, packages/vscode/src/extension.ts, packages/vscode/package.json, packages/vscode/tsconfig.json, packages/vscode/.vscodeignore
+status: done
+files: packages/vscode/webview/**, packages/vscode/scripts/**, packages/vscode/src/workbench/panel.ts, packages/vscode/src/workbench/html.ts, packages/vscode/src/extension.ts, packages/vscode/package.json, packages/vscode/tsconfig.json, packages/vscode/.vscodeignore
 depends: vscode-extension/T10
 
 `Specflow: Open workbench` opens one themed panel with five empty tabs under a strict CSP; a second call reveals it; tab and reload restore work; the `.vsix` contains the webview bundle.

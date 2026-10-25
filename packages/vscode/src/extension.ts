@@ -16,6 +16,7 @@ import { Insights } from "./insights.js";
 import type { ExplorerSource } from "./explorer-nodes.js";
 import { SpecService } from "./spec-service.js";
 import { corePath, VsCodeFileSystem } from "./vscode-fs.js";
+import { type OpenWorkbenchOptions, WorkbenchPanel, workbenchViewType } from "./workbench/panel.js";
 
 /** Context key: true when a workspace folder has specs. Commands other than init are only shown then. */
 export const hasSpecsKey = "specflow.hasSpecs";
@@ -70,11 +71,18 @@ export type SpecflowApi = {
   review: ReviewController;
   insights: Insights;
   refreshInsights: (options?: { drift?: boolean }) => Promise<void>;
+  workbench: WorkbenchPanel;
 };
 
 /** Runs when a workspace contains `.specs/`, or when `Initialize specs` is invoked. */
 export async function activate(context: vscode.ExtensionContext): Promise<SpecflowApi> {
+  const workbench = new WorkbenchPanel(context.extensionUri);
   context.subscriptions.push(
+    workbench,
+    vscode.window.registerWebviewPanelSerializer(workbenchViewType, workbench),
+    vscode.commands.registerCommand("specflow.openWorkbench", (options?: OpenWorkbenchOptions) => {
+      workbench.open(options);
+    }),
     vscode.commands.registerCommand("specflow.init", () => initialize()),
     vscode.commands.registerCommand("specflow.lint", () => lintCommand([...services.values()], diagnostics)),
     vscode.commands.registerCommand("specflow.show", (target?: string) => showCommand([...services.values()], target)),
@@ -129,7 +137,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Specfl
   await refreshContext();
   // vscode-extension/R8: tell the user early if runs cannot work. Not awaited, so activation stays fast.
   if (services.size > 0) void checkHarness(registry, firstConfig(), { quiet: true });
-  return { services: () => [...services.values()], explorer, registry, runs, review, insights, refreshInsights };
+  return { services: () => [...services.values()], explorer, registry, runs, review, insights, refreshInsights, workbench };
 }
 
 export function deactivate(): void {}

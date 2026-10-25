@@ -286,6 +286,24 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
     assert.equal(editor.document.lineAt(editor.selection.active.line).text, "## R2: Lock out after failed attempts");
   });
 
+  // workbench-ui/R1: one workbench tab, revealed on the second call; its page runs under the CSP.
+  test("opens the workbench once and switches its tab on request", async () => {
+    const workbenchTabs = () =>
+      vscode.window.tabGroups.all.flatMap((g) => g.tabs).filter((t) => t.input instanceof vscode.TabInputWebview && t.input.viewType.endsWith("specflow.workbench"));
+    const api = extension().exports as { workbench: { panel?: vscode.WebviewPanel; tab?: string } };
+    await vscode.commands.executeCommand("specflow.openWorkbench");
+    await eventually(() => api.workbench.tab === "overview", "the workbench page to report its tab");
+    const html = api.workbench.panel!.webview.html;
+    assert.match(html, /default-src 'none'; script-src 'nonce-[^']+'/);
+    await vscode.commands.executeCommand("workbench.action.focusFirstEditorGroup");
+    await vscode.commands.executeCommand("specflow.openWorkbench", { tab: "drift" });
+    await eventually(() => api.workbench.tab === "drift", "the drift tab");
+    assert.equal(workbenchTabs().length, 1);
+    assert.equal(api.workbench.panel!.active, true);
+    api.workbench.panel!.dispose();
+    await eventually(() => workbenchTabs().length === 0 && api.workbench.panel === undefined, "the workbench to close");
+  });
+
   test("refuses to initialize over existing specs", async () => {
     await vscode.commands.executeCommand("specflow.init");
     const product = await vscode.workspace.findFiles(".specs/product.md");

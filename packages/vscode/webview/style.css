@@ -1,0 +1,61 @@
+/* Colors and fonts come from VS Code's theme variables only (workbench-ui/R1). */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  color: var(--vscode-foreground);
+  background: var(--vscode-editor-background);
+}
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  position: sticky;
+  top: 0;
+  background: var(--vscode-editor-background);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--vscode-descriptionForeground);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--vscode-foreground);
+}
+
+.tab.selected {
+  color: var(--vscode-foreground);
+  border-bottom-color: var(--vscode-focusBorder);
+}
+
+.tab:focus-visible,
+.panel:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}
+
+.panel {
+  padding: 12px 20px;
+}
+
+.panel h1 {
+  font-size: 1.3em;
+  font-weight: 600;
+  margin: 8px 0;
+}
+
+.empty {
+  color: var(--vscode-descriptionForeground);
+}

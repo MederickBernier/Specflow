@@ -11,8 +11,10 @@ packages/core/src/
   metadata.ts          setMetadataLine: shared by setTaskStatus and drift ack
   drift/ack.ts         ackDrift(fs, git, tree, ref, commit)
 
+packages/vscode/scripts/build.mts  esbuild for the host and the webview, copies codicons
 packages/vscode/src/workbench/
-  panel.ts             WorkbenchPanel: creates/reveals the panel, CSP shell, message routing
+  html.ts              tab list and the page's HTML and CSP (no vscode API)
+  panel.ts             WorkbenchPanel: creates/reveals the panel, restores it, message routing
   state.ts             buildWorkbenchState(...) -> WorkbenchState (no vscode API)
   protocol.ts          zod schemas for webview -> host messages; host -> webview types
   actions.ts           maps intents to existing commands and core calls
@@ -27,13 +29,14 @@ packages/vscode/webview/
 
 ## Build
 
-- A second esbuild entry bundles `webview/main.tsx` for the browser (`--format=iife --jsx=automatic --jsx-import-source=preact`) to `dist/webview.js`, and its CSS to `dist/webview.css`. `@vscode/codicons` CSS and font are copied to `dist/codicons/`.
-- `webview/` has its own `tsconfig.json` (`lib: ["ES2023", "DOM"]`, `jsxImportSource: preact`) so DOM types never leak into the extension host code.
-- Dependencies: `preact` (runtime), `@vscode/codicons` (assets). Nothing else at runtime; the packaged `.vsix` stays under 400 KB.
+- `scripts/build.mts` (run by `build` and, with `--minify`, by `package`) bundles the extension host as before, and a second esbuild entry bundles `webview/main.tsx` for the browser (`--format=iife --jsx=automatic --jsx-import-source=preact`) to `dist/webview.js`, and its CSS to `dist/webview.css`. `@vscode/codicons` CSS and font are copied to `dist/codicons/`.
+- `webview/` has its own `tsconfig.json` (`lib: ["ES2023", "DOM"]`, `jsxImportSource: preact`) so DOM types never leak into the extension host code; `build` type-checks both. Vitest picks up the JSX settings from it.
+- Dependencies: `preact` (runtime), `@vscode/codicons` (assets). Nothing else at runtime; the packaged `.vsix` stays under 400 KB (about 270 KB after T1, most of it the codicon font).
 
 ## Panel and security
 
 - `Specflow: Open workbench` (`specflow.openWorkbench`, optional `{ tab, feature, ref }`) creates the panel once and reveals it afterwards; a button in the Specs view title runs it. `retainContextWhenHidden` is off; the webview saves `{ tab, filter, diffLayout }` with `vscode.setState`, and a `WebviewPanelSerializer` restores the panel after a reload.
+- The page posts `{ type: "tab", tab }` whenever its tab changes (smoke tests use this to know the bundle ran under the CSP), and the host posts `{ type: "show", tab }` to switch tabs. The tab bar follows the ARIA tabs pattern: arrow keys, Home and End, one tab in the tab order.
 - CSP: `default-src 'none'; script-src 'nonce-…'; style-src ${cspSource}; font-src ${cspSource}; img-src ${cspSource} data:`. `localResourceRoots` is `dist/` only.
 - Colors come from VS Code's `--vscode-*` CSS variables; no theme of our own.
 - Preact escapes all text. Diff lines, commit subjects and spec text are rendered as text nodes; `dangerouslySetInnerHTML` is not used.
