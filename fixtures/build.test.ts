@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -7,7 +7,8 @@ import { buildFixtures } from "./build.ts";
 
 const lintRules = ["dependency-cycle", "duplicate-id", "malformed-heading", "orphan-requirement", "unknown-ref"];
 
-const tmp = mkdtempSync(join(tmpdir(), "specflow-fixtures-"));
+// realpath expands short 8.3 names on Windows, which git never prints.
+const tmp = realpathSync.native(mkdtempSync(join(tmpdir(), "specflow-fixtures-")));
 afterAll(() => rmSync(tmp, { recursive: true, force: true }));
 
 function git(cwd: string, ...args: string[]): string {
@@ -24,7 +25,7 @@ describe("buildFixtures", () => {
 
   it("makes each fixture its own repo with one commit and a clean tree", () => {
     for (const path of Object.values(first)) {
-      expect(git(path, "rev-parse", "--show-toplevel")).toBe(path);
+      expect(git(path, "rev-parse", "--show-toplevel")).toBe(path.replace(/\\/g, "/"));
       expect(git(path, "rev-list", "--count", "HEAD")).toBe("1");
       expect(git(path, "status", "--porcelain")).toBe("");
     }

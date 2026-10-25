@@ -7,7 +7,7 @@
 - esbuild for the extension bundle, tsc for library builds
 - Vitest for unit and integration tests
 - @vscode/test-electron for extension smoke tests
-- GitHub Actions for CI
+- GitHub Actions for CI, on Linux and Windows
 
 ## Packages
 
@@ -25,6 +25,14 @@
 - Adapters translate harness output into the normalized event model in `core`. Nothing outside an adapter knows harness-specific flags or formats.
 - If a feature can live in `core`, it does. The CLI and the extension only parse input, call `core`, and render output.
 - Every CLI command supports `--json` with a stable, versioned output schema. The extension may call `core` directly, but the JSON schema is the contract other shells use.
+
+## Platforms
+
+The tool runs on Linux, macOS, Windows, and WSL (including a WSL folder opened from Windows VS Code).
+
+- Paths inside `core` are absolute and use forward slashes: `/home/me/repo`, `C:/repo`, `//wsl$/Ubuntu/home/me/repo`.
+- `core` converts incoming paths with `toPosixPath` and builds paths with `joinPath` and `parentDir`, never `node:path`'s `posix` helpers, which collapse UNC prefixes.
+- Repo files use LF line endings (`.gitattributes`); parsers still accept CRLF.
 
 ## Conventions
 

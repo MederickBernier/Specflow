@@ -4,6 +4,7 @@ import { defaultConfig } from "./config.js";
 import { MemoryFileSystem } from "./fs.js";
 import { findRoot, loadSpecTree } from "./load.js";
 import { NodeFileSystem } from "./node/fs.js";
+import { toPosixPath } from "./paths.js";
 
 const requirements = "## R1: Do it\nstatus: approved\n";
 const tasks = "## T1: Build it [R1]\n";
@@ -27,6 +28,16 @@ describe("findRoot", () => {
   it("stops at a .git boundary", async () => {
     const fs = repo({ "/repo/.specs/a/tasks.md": tasks, "/repo/vendor/lib/.git/HEAD": "", "/repo/vendor/lib/x.ts": "" });
     expect(await findRoot(fs, "/repo/vendor/lib")).toBeUndefined();
+  });
+
+  it("accepts Windows drive paths with backslashes", async () => {
+    const fs = new MemoryFileSystem({ "C:/repo/.specs/a/tasks.md": tasks, "C:/repo/src/x.ts": "" });
+    expect(await findRoot(fs, "C:\\repo\\src")).toBe("C:/repo");
+  });
+
+  it("accepts UNC paths such as a WSL folder opened from Windows", async () => {
+    const fs = new MemoryFileSystem({ "//wsl$/Ubuntu/home/me/repo/.specs/a/tasks.md": tasks });
+    expect(await findRoot(fs, "\\\\wsl$\\Ubuntu\\home\\me\\repo\\src")).toBe("//wsl$/Ubuntu/home/me/repo");
   });
 
   it("returns undefined when there are no specs anywhere", async () => {
@@ -115,7 +126,7 @@ describe("loadSpecTree", () => {
     if (!result.ok) throw new Error(result.error.message);
     const tree = result.value;
 
-    expect(tree.root).toBe(root);
+    expect(tree.root).toBe(toPosixPath(root));
     expect(tree.features.map((f) => f.name)).toEqual(["accounts", "billing"]);
     expect(tree.features.map((f) => [f.requirements.length, f.tasks.length, f.design !== undefined])).toEqual([
       [4, 3, true],

@@ -1,9 +1,9 @@
-import { posix } from "node:path";
 import { type ConfigError, loadConfig } from "./config.js";
 import type { FileSystem } from "./fs.js";
 import type { Feature, SpecTree } from "./model.js";
 import { parseRequirements } from "./parse/requirements.js";
 import { parseTasks } from "./parse/tasks.js";
+import { joinPath, parentDir, toPosixPath } from "./paths.js";
 import { err, ok, type Result } from "./result.js";
 
 /** Why a spec tree could not be loaded. */
@@ -19,14 +19,13 @@ export type LoadError =
  * there is no root.
  */
 export async function findRoot(fs: FileSystem, from: string): Promise<string | undefined> {
-  let dir = posix.normalize(from);
-  for (;;) {
-    if (await fs.exists(posix.join(dir, ".specs"))) return dir;
-    if (await fs.exists(posix.join(dir, ".git"))) return undefined;
-    const parent = posix.dirname(dir);
-    if (parent === dir) return undefined;
-    dir = parent;
+  let dir: string | undefined = toPosixPath(from);
+  while (dir !== undefined) {
+    if (await fs.exists(joinPath(dir, ".specs"))) return dir;
+    if (await fs.exists(joinPath(dir, ".git"))) return undefined;
+    dir = parentDir(dir);
   }
+  return undefined;
 }
 
 /**
@@ -46,7 +45,7 @@ export async function loadSpecTree(fs: FileSystem, from: string): Promise<Result
     return err({ kind: "invalid-config", config: config.error, message: config.error.message });
   }
 
-  const specsDir = posix.join(root, config.value.specsDir);
+  const specsDir = joinPath(root, config.value.specsDir);
   if (!(await fs.exists(specsDir))) {
     return err({
       kind: "missing-specs-dir",
@@ -58,7 +57,7 @@ export async function loadSpecTree(fs: FileSystem, from: string): Promise<Result
   const names = (await fs.listDir(specsDir, { directoriesOnly: true })).filter((name) => !name.startsWith("."));
   const { requirement, task } = config.value.ids;
   const features = await Promise.all(
-    names.map((name) => loadFeature(fs, posix.join(specsDir, name), name, { requirement, task })),
+    names.map((name) => loadFeature(fs, joinPath(specsDir, name), name, { requirement, task })),
   );
 
   return ok({ root, config: config.value, features });
@@ -71,12 +70,12 @@ async function loadFeature(
   prefixes: { requirement: string; task: string },
 ): Promise<Feature> {
   const [requirementsText, tasksText, designText] = await Promise.all(
-    ["requirements.md", "tasks.md", "design.md"].map((file) => readIfExists(fs, posix.join(dir, file))),
+    ["requirements.md", "tasks.md", "design.md"].map((file) => readIfExists(fs, joinPath(dir, file))),
   );
 
-  const requirementsFile = posix.join(dir, "requirements.md");
-  const tasksFile = posix.join(dir, "tasks.md");
-  const designFile = posix.join(dir, "design.md");
+  const requirementsFile = joinPath(dir, "requirements.md");
+  const tasksFile = joinPath(dir, "tasks.md");
+  const designFile = joinPath(dir, "design.md");
 
   const requirements =
     requirementsText === undefined

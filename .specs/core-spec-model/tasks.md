@@ -68,3 +68,10 @@ files: packages/cli/src/commands/init.ts, packages/core/src/templates/**
 depends: T9
 
 `init` then `lint` passes; a second `init` refuses without `--force` and never overwrites.
+
+## T11: Support Windows and WSL paths []
+status: done
+files: packages/core/src/paths.ts, .github/workflows/ci.yml, .gitattributes, fixtures/build.ts
+depends: T7
+
+Core accepts drive and UNC paths from any shell; CI builds and tests on Linux and Windows.

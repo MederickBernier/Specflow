@@ -13,6 +13,7 @@ export type {
 } from "./model.js";
 export type { ConfigError } from "./config.js";
 export { configPath, defaultConfig, loadConfig, parseConfig } from "./config.js";
+export { joinPath, parentDir, toPosixPath } from "./paths.js";
 export type { Result } from "./result.js";
 export { err, ok } from "./result.js";
 export type { LoadError } from "./load.js";

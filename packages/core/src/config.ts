@@ -1,8 +1,8 @@
-import { posix } from "node:path";
 import { parse, YAMLParseError } from "yaml";
 import { z } from "zod";
 import type { FileSystem } from "./fs.js";
 import type { Config } from "./model.js";
+import { joinPath } from "./paths.js";
 import { err, ok, type Result } from "./result.js";
 
 /** Path of the config file, relative to the repo root. */
@@ -92,7 +92,7 @@ export function parseConfig(text: string, file: string = configPath): Result<Con
  * defaults are returned.
  */
 export async function loadConfig(fs: FileSystem, root: string): Promise<Result<Config, ConfigError>> {
-  const file = posix.join(root, configPath);
+  const file = joinPath(root, configPath);
   if (!(await fs.exists(file))) {
     return ok(structuredClone(defaultConfig));
   }

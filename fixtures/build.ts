@@ -6,8 +6,7 @@
 // reproducible.
 
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdirSync, readdirSync, rmSync } from "node:fs";
-import { devNull } from "node:os";
+import { cpSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -19,24 +18,31 @@ const baseFixture = "clean";
 export const reposDir = join(here, "repos");
 
 const fixedDate = "2026-01-01T00:00:00Z";
-const gitEnv: NodeJS.ProcessEnv = {
-  ...process.env,
-  GIT_AUTHOR_NAME: "Fixture",
-  GIT_AUTHOR_EMAIL: "fixture@example.com",
-  GIT_AUTHOR_DATE: fixedDate,
-  GIT_COMMITTER_NAME: "Fixture",
-  GIT_COMMITTER_EMAIL: "fixture@example.com",
-  GIT_COMMITTER_DATE: fixedDate,
-  GIT_CONFIG_GLOBAL: devNull,
-  GIT_CONFIG_NOSYSTEM: "1",
-};
 
-function git(cwd: string, ...args: string[]): string {
-  return execFileSync("git", ["-c", "init.defaultBranch=main", "-c", "commit.gpgsign=false", ...args], {
-    cwd,
-    env: gitEnv,
-    encoding: "utf8",
-  });
+// The user's global and system git config never apply. An empty file works on
+// every OS, where /dev/null does not.
+function gitEnv(outDir: string): NodeJS.ProcessEnv {
+  const globalConfig = join(outDir, ".gitconfig");
+  writeFileSync(globalConfig, "");
+  return {
+    ...process.env,
+    GIT_AUTHOR_NAME: "Fixture",
+    GIT_AUTHOR_EMAIL: "fixture@example.com",
+    GIT_AUTHOR_DATE: fixedDate,
+    GIT_COMMITTER_NAME: "Fixture",
+    GIT_COMMITTER_EMAIL: "fixture@example.com",
+    GIT_COMMITTER_DATE: fixedDate,
+    GIT_CONFIG_GLOBAL: globalConfig,
+    GIT_CONFIG_NOSYSTEM: "1",
+  };
+}
+
+function git(cwd: string, env: NodeJS.ProcessEnv, ...args: string[]): string {
+  return execFileSync(
+    "git",
+    ["-c", "init.defaultBranch=main", "-c", "commit.gpgsign=false", "-c", "core.autocrlf=false", ...args],
+    { cwd, env, encoding: "utf8" },
+  );
 }
 
 /** Names of all fixtures, `clean` included, in sorted order. */
@@ -56,6 +62,7 @@ export function fixturePath(name: string, outDir: string = reposDir): string {
 export function buildFixtures(outDir: string = reposDir): Record<string, string> {
   rmSync(outDir, { recursive: true, force: true });
   mkdirSync(outDir, { recursive: true });
+  const env = gitEnv(outDir);
 
   const built: Record<string, string> = {};
   for (const name of fixtureNames()) {
@@ -64,9 +71,9 @@ export function buildFixtures(outDir: string = reposDir): Record<string, string>
     if (name !== baseFixture) {
       cpSync(join(sourceDir, name), dest, { recursive: true, force: true });
     }
-    git(dest, "init", "--quiet");
-    git(dest, "add", "--all");
-    git(dest, "commit", "--quiet", "--message", `fixture: ${name}`);
+    git(dest, env, "init", "--quiet");
+    git(dest, env, "add", "--all");
+    git(dest, env, "commit", "--quiet", "--message", `fixture: ${name}`);
     built[name] = dest;
   }
   return built;

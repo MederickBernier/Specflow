@@ -1,7 +1,8 @@
-import { posix } from "node:path";
+import { toPosixPath } from "./paths.js";
 
 /**
- * File access injected into `core`. Paths are absolute.
+ * File access injected into `core`. Paths are absolute and use forward slashes
+ * (see `toPosixPath`); Node's own `fs` accepts that form on every OS.
  *
  * - `readFile` rejects when the file does not exist.
  * - `writeFile` creates missing parent directories.
@@ -75,6 +76,5 @@ export class MemoryFileSystem implements FileSystem {
 }
 
 function normalize(path: string): string {
-  const normalized = posix.normalize(path);
-  return normalized.length > 1 && normalized.endsWith("/") ? normalized.slice(0, -1) : normalized;
+  return toPosixPath(path);
 }
