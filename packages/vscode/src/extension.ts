@@ -6,6 +6,7 @@ import { basename } from "node:path";
 import { Diagnostics } from "./diagnostics.js";
 import { SpecExplorer } from "./explorer.js";
 import type { ExplorerNode } from "./explorer-nodes.js";
+import { headScheme, ReviewController } from "./run/review.js";
 import { RunController } from "./run/run-controller.js";
 import { checkHarness } from "./harness-health.js";
 import type { ExplorerSource } from "./explorer-nodes.js";
@@ -27,6 +28,7 @@ const clock = new SystemClock();
 const registry = new AdapterRegistry([new ClaudeCodeAdapter({ spawner: new NodeSpawner(), git, clock })]);
 
 const runs = new RunController({ fs, git, registry, clock });
+const review = new ReviewController({ git, fs });
 
 /** The config of the first spec root, for harness selection. */
 const firstConfig = () => [...services.values()].find((s) => s.tree)?.tree?.config;
@@ -46,6 +48,7 @@ export type SpecflowApi = {
   explorer: SpecExplorer;
   registry: AdapterRegistry;
   runs: RunController;
+  review: ReviewController;
 };
 
 /** Runs when a workspace contains `.specs/`, or when `Initialize specs` is invoked. */
@@ -55,7 +58,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<Specfl
     vscode.commands.registerCommand("specflow.checkHarness", () => checkHarness(registry, firstConfig(), { quiet: false })),
     vscode.commands.registerCommand("specflow.runTask", (node?: ExplorerNode | string, task?: string) => runTaskCommand(node, task)),
     vscode.commands.registerCommand("specflow.cancelRun", () => runs.cancel()),
+    vscode.commands.registerCommand("specflow.openDiff", (file: string) => review.openDiff(file)),
+    vscode.commands.registerCommand("specflow.acceptRun", () => review.accept()),
+    vscode.commands.registerCommand("specflow.discardRun", (options?: { confirm?: boolean }) => review.discard(options)),
+    vscode.window.registerTreeDataProvider("specflow.review", review),
+    vscode.workspace.registerTextDocumentContentProvider(headScheme, review),
     runs,
+    review,
     vscode.commands.registerCommand("specflow.refresh", async () => {
       await Promise.all([...services.values()].map((s) => s.load()));
       explorer.refresh();
@@ -70,7 +79,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Specfl
   await refreshContext();
   // vscode-extension/R8: tell the user early if runs cannot work. Not awaited, so activation stays fast.
   if (services.size > 0) void checkHarness(registry, firstConfig(), { quiet: true });
-  return { services: () => [...services.values()], explorer, registry, runs };
+  return { services: () => [...services.values()], explorer, registry, runs, review };
 }
 
 export function deactivate(): void {}
@@ -170,5 +179,11 @@ async function runTaskCommand(node?: ExplorerNode | string, taskId?: string) {
     void vscode.window.showErrorMessage(`Specflow: no task ${target.feature}/${target.id}`);
     return undefined;
   }
-  return runs.run(service.tree, target.feature, target.id);
+  if (review.pending) {
+    void vscode.window.showWarningMessage("Specflow: accept or discard the run under review first.");
+    return undefined;
+  }
+  const result = await runs.run(service.tree, target.feature, target.id);
+  if (result?.recording?.mode === "staged") await review.start(service.tree, result);
+  return result;
 }

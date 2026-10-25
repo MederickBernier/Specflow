@@ -80,3 +80,5 @@ export type { LlmDeps } from "./drift/llm.js";
 export { llmPass, llmPrompt, parseVerdict } from "./drift/llm.js";
 export type { RunTaskError, RunTaskHooks, RunTaskResult } from "./run/run-task.js";
 export { runTask } from "./run/run-task.js";
+export type { ReviewError, StagedRecording } from "./run/review.js";
+export { acceptRecording, discardRecording } from "./run/review.js";

@@ -183,6 +183,75 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
     assert.match(tasks, /## T3: Add lockout counter \[R2\]\nstatus: todo/);
   });
 
+  // vscode-extension/R5: review the changed files, accept with trailers, or discard.
+  type Review = { pending?: unknown; files: () => { path: string; change: string }[] };
+  const writer = (name: string, content: string) => ({
+    name,
+    check: async () => ({ ok: true, value: { version: "1", warnings: [] } }),
+    run: async function* (input: { cwd: string }) {
+      const nodeFs = await import("node:fs");
+      yield { ...smokeEvents[0], harness: name };
+      nodeFs.writeFileSync(`${input.cwd}/src/auth/login.ts`, content);
+      yield { kind: "file-changed", path: "src/auth/login.ts", change: "modified" };
+      nodeFs.writeFileSync(`${input.cwd}/src/auth/lockout.ts`, "export const attempts = 5;\n");
+      yield { kind: "file-changed", path: "src/auth/lockout.ts", change: "added" };
+      yield { kind: "finished", ok: true, summary: "Added the lockout counter." };
+    },
+  });
+  const gitIn = async (...args: string[]) => {
+    const { execFileSync } = await import("node:child_process");
+    return execFileSync("git", args, { cwd: vscode.workspace.workspaceFolders![0]!.uri.fsPath, encoding: "utf8" });
+  };
+
+  test("reviews a staged run in the diff editor and accepts it with trailers", async () => {
+    const api = extension().exports as Api & { review: Review };
+    api.registry.register(writer("smoke-write", "export const login = () => 'changed';\n"));
+    await gitIn("config", "user.name", "Smoke");
+    await gitIn("config", "user.email", "smoke@example.com");
+    await gitIn("config", "commit.gpgsign", "false");
+    await withRunSettings(async () => {
+      await vscode.workspace.getConfiguration("specflow").update("harness", "smoke-write", vscode.ConfigurationTarget.Global);
+      const result = (await vscode.commands.executeCommand("specflow.runTask", "accounts", "T3")) as { recording?: { mode: string } };
+      assert.equal(result.recording?.mode, "staged");
+    });
+    assert.deepEqual(api.review.files(), [
+      { path: "src/auth/login.ts", change: "modified" },
+      { path: "src/auth/lockout.ts", change: "added" },
+      { path: ".specs/accounts/tasks.md", change: "modified" },
+    ]);
+
+    await vscode.commands.executeCommand("specflow.openDiff", "src/auth/login.ts");
+    const input = vscode.window.tabGroups.activeTabGroup.activeTab?.input;
+    assert.ok(input instanceof vscode.TabInputTextDiff, "a diff editor is open");
+    assert.equal(input.original.scheme, "specflow-head");
+    assert.ok(input.modified.fsPath.endsWith("login.ts"));
+    const head = await vscode.workspace.openTextDocument(input.original);
+    assert.equal(head.getText(), "export function login(email: string, password: string): boolean {\n  return email.length > 0 && password === \"secret\";\n}\n");
+
+    const commit = (await vscode.commands.executeCommand("specflow.acceptRun")) as string;
+    assert.match(commit, /^[0-9a-f]{40}$/);
+    assert.equal(await gitIn("log", "-1", "--format=%(trailers:key=Spec-Task,valueonly)"), "T3\n\n");
+    assert.equal(api.review.pending, undefined);
+  });
+
+  test("discards a staged run, restoring files and the task status", async () => {
+    const api = extension().exports as Api & { review: Review };
+    api.registry.register(writer("smoke-write-2", "export const login = () => 'again';\n"));
+    const before = await gitIn("show", "HEAD:src/auth/login.ts");
+    const tasksBefore = await gitIn("show", "HEAD:.specs/accounts/tasks.md");
+    // Accepting marked T3 done; run it again anyway to discard it.
+    await withRunSettings(async () => {
+      await vscode.workspace.getConfiguration("specflow").update("harness", "smoke-write-2", vscode.ConfigurationTarget.Global);
+      await vscode.commands.executeCommand("specflow.runTask", "accounts", "T3");
+    });
+    assert.ok(api.review.pending, "a run is under review");
+    assert.equal(await vscode.commands.executeCommand("specflow.discardRun", { confirm: false }), true);
+    const root = vscode.workspace.workspaceFolders![0]!.uri;
+    assert.equal(new TextDecoder().decode(await vscode.workspace.fs.readFile(vscode.Uri.joinPath(root, "src/auth/login.ts"))), before);
+    assert.equal(new TextDecoder().decode(await vscode.workspace.fs.readFile(vscode.Uri.joinPath(root, ".specs/accounts/tasks.md"))), tasksBefore);
+    assert.equal(await gitIn("diff", "--cached", "--name-only"), "");
+  });
+
   test("refuses to initialize over existing specs", async () => {
     await vscode.commands.executeCommand("specflow.init");
     const product = await vscode.workspace.findFiles(".specs/product.md");

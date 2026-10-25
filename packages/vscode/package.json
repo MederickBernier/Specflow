@@ -44,6 +44,23 @@
         "command": "specflow.cancelRun",
         "title": "Cancel run",
         "category": "Specflow"
+      },
+      {
+        "command": "specflow.acceptRun",
+        "title": "Accept and commit",
+        "category": "Specflow",
+        "icon": "$(check)"
+      },
+      {
+        "command": "specflow.discardRun",
+        "title": "Discard changes",
+        "category": "Specflow",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "specflow.openDiff",
+        "title": "Open diff",
+        "category": "Specflow"
       }
     ],
     "menus": {
@@ -67,6 +84,18 @@
         {
           "command": "specflow.cancelRun",
           "when": "specflow.hasSpecs"
+        },
+        {
+          "command": "specflow.acceptRun",
+          "when": "specflow.reviewing"
+        },
+        {
+          "command": "specflow.discardRun",
+          "when": "specflow.reviewing"
+        },
+        {
+          "command": "specflow.openDiff",
+          "when": "false"
         }
       ],
       "view/title": [
@@ -74,6 +103,16 @@
           "command": "specflow.refresh",
           "when": "view == specflow.specs",
           "group": "navigation"
+        },
+        {
+          "command": "specflow.acceptRun",
+          "when": "view == specflow.review",
+          "group": "navigation@1"
+        },
+        {
+          "command": "specflow.discardRun",
+          "when": "view == specflow.review",
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [
@@ -95,6 +134,11 @@
           "id": "specflow.specs",
           "name": "Specs",
           "when": "specflow.hasSpecs"
+        },
+        {
+          "id": "specflow.review",
+          "name": "Run review",
+          "when": "specflow.reviewing"
         }
       ]
     },

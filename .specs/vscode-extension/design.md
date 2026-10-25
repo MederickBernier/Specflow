@@ -46,8 +46,8 @@ Two `DiagnosticCollection`s, `specflow-lint` and `specflow-drift`, so each can b
 2. `adapter.check()`; on failure show R8's message.
 3. Confirmation (a modal naming task, harness and commit mode) unless `specflow.confirmRuns` is false. A dirty tree offers `Run anyway`, which retries with `allowDirty`.
 4. Core's `runTask` (the same flow as `specflow run`) starts; `RunView` opens beside the editor and renders events as they arrive. `Specflow: Cancel run`, or the view's Cancel button, aborts it.
-5. On `finished` with `ok`, show the changed files in a tree under the run, each opening `vscode.diff(HEAD version, working file)` through the built-in Git extension API.
-6. Accept runs `git commit -F` with the prepared message. Discard restores files with `git restore`, after a modal confirmation.
+5. On `finished` with `ok` and a staged recording, the `Run review` view lists the changed files, each opening `vscode.diff(HEAD version, working file)`. The HEAD side comes from a `specflow-head:` content provider running `git show HEAD:<file>` (empty for added files), rather than the built-in Git extension's API, so review works when that extension is disabled.
+6. Accept runs core's `acceptRecording`: `git commit -F - -- <run's files>` with the prepared message, so edits made while reviewing are included and other staged files are not. Discard runs `discardRecording` after a modal confirmation: tracked files go back to HEAD, added files are removed, `tasks.md` is unstaged and its status line restored from the snapshot. While a run is under review (`specflow.reviewing`), starting another run is refused.
 
 ## RunView
 

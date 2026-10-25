@@ -43,8 +43,8 @@ depends: T5, task-run/T5
 With the replay adapter: events render in order, cancel aborts, usage shows in the footer.
 
 ## T7: Review, accept and discard [R5]
-status: todo
-files: packages/vscode/src/run/review.ts
+status: done
+files: packages/vscode/src/run/review.ts, packages/core/src/run/review.ts
 depends: T6, task-run/T7
 
 Changed files open in the built-in diff editor; accept commits with trailers; discard restores after confirmation and resets the task status.
