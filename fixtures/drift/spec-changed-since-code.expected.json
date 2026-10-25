@@ -1,0 +1,8 @@
+[
+  {
+    "rule": "drift/spec-changed-since-code",
+    "feature": "auth",
+    "id": "R2",
+    "commit": "docs(specs): sign out ends every session"
+  }
+]

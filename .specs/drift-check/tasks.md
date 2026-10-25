@@ -1,8 +1,8 @@
 # drift-check: tasks
 
 ## T1: Drift fixture repos []
-status: todo
-files: fixtures/drift/**
+status: done
+files: fixtures/drift/**, fixtures/git.ts
 depends: core-spec-model/T2, task-run/T7
 
 One fixture per rule, plus a clean one, plus an acked one, plus one where an out-of-scope file must not widen the touched set. Each fixture's expected findings are written next to it as JSON.

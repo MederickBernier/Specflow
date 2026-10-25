@@ -1,0 +1,9 @@
+[
+  {
+    "rule": "drift/code-changed-since-spec",
+    "feature": "auth",
+    "id": "R1",
+    "file": "src/login.ts",
+    "commit": "fix: reject empty passwords"
+  }
+]

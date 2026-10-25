@@ -1,0 +1,7 @@
+[
+  {
+    "rule": "drift/unimplemented",
+    "feature": "auth",
+    "id": "R3"
+  }
+]
