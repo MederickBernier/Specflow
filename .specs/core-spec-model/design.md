@@ -10,6 +10,10 @@ FileSystem -> findRoot -> loadConfig -> listFeatures -> parseFile (remark AST) -
 
 No caching in v1. The tree is small; reparsing on every call keeps things simple and correct.
 
+- `findRoot` walks up from the start directory to the nearest folder containing `.specs/`, stopping at a folder containing `.git`, so a repo without specs never picks up a parent repo's.
+- Features are the non-hidden subfolders of `specsDir`, in folder-name order. `requirements.md`, `tasks.md` and `design.md` are each optional.
+- `loadSpecTree(fs, from)` returns `Result<SpecTree, LoadError>`, where `LoadError.kind` is `no-specs`, `invalid-config` or `missing-specs-dir`.
+
 ## Types
 
 ```ts

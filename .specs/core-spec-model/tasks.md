@@ -42,7 +42,7 @@ depends: T3
 Unit tests cover references, empty reference lists, files, depends and line ranges.
 
 ## T7: Load the full spec tree [R3]
-status: todo
+status: done
 files: packages/core/src/load.ts
 depends: T4, T5, T6
 
