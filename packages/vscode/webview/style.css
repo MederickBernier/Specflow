@@ -354,3 +354,172 @@ select {
   gap: 6px;
   margin-top: 4px;
 }
+
+/* Diffs (workbench-ui/R4, R5) */
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 2px;
+}
+
+.segmented button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: none;
+  color: var(--vscode-foreground);
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.segmented button.selected {
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+}
+
+.file-diff {
+  margin: 0 0 16px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.file-diff-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: var(--vscode-sideBarSectionHeader-background, var(--vscode-editorWidget-background));
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.file-path {
+  flex: 1;
+  font-family: var(--vscode-editor-font-family);
+  overflow-wrap: anywhere;
+}
+
+.change-badge {
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 0.85em;
+  color: var(--vscode-badge-foreground);
+  background: var(--vscode-badge-background);
+}
+
+.change-badge.added {
+  color: var(--vscode-gitDecoration-addedResourceForeground);
+  background: none;
+  border: 1px solid currentColor;
+}
+
+.change-badge.deleted {
+  color: var(--vscode-gitDecoration-deletedResourceForeground);
+  background: none;
+  border: 1px solid currentColor;
+}
+
+.change-badge.renamed {
+  color: var(--vscode-gitDecoration-renamedResourceForeground);
+  background: none;
+  border: 1px solid currentColor;
+}
+
+.line-counts {
+  font-family: var(--vscode-editor-font-family);
+}
+
+.additions {
+  color: var(--vscode-gitDecoration-addedResourceForeground);
+}
+
+.deletions {
+  color: var(--vscode-gitDecoration-deletedResourceForeground);
+}
+
+.diff-placeholder {
+  margin: 0;
+  padding: 12px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.diff-scroll {
+  overflow-x: auto;
+}
+
+table.diff {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--vscode-editor-font-family);
+  font-size: var(--vscode-editor-font-size);
+  line-height: 1.4;
+}
+
+table.diff.split {
+  table-layout: fixed;
+}
+
+table.diff td {
+  padding: 0 6px;
+  vertical-align: top;
+}
+
+table.diff td.ln {
+  width: 1%;
+  min-width: 3ch;
+  text-align: right;
+  color: var(--vscode-editorLineNumber-foreground);
+  user-select: none;
+  white-space: nowrap;
+}
+
+table.diff.split td.ln {
+  width: 5ch;
+}
+
+table.diff td.sign {
+  width: 1ch;
+  padding: 0 2px;
+  user-select: none;
+}
+
+table.diff.split td.sign {
+  width: 2ch;
+}
+
+table.diff td.code {
+  white-space: pre;
+}
+
+table.diff.split td.code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+table.diff tr.add td,
+table.diff td.add {
+  background: var(--vscode-diffEditor-insertedLineBackground, rgba(155, 185, 85, 0.2));
+}
+
+table.diff tr.del td,
+table.diff td.del {
+  background: var(--vscode-diffEditor-removedLineBackground, rgba(255, 0, 0, 0.2));
+}
+
+table.diff td.empty-side {
+  background: var(--vscode-diffEditor-diagonalFill, transparent);
+  opacity: 0.4;
+}
+
+table.diff tr.hunk-header td {
+  padding: 2px 8px;
+  color: var(--vscode-descriptionForeground);
+  background: var(--vscode-diffEditor-unchangedRegionBackground, var(--vscode-editorWidget-background));
+}
+
+.no-newline {
+  color: var(--vscode-editorWarning-foreground);
+}

@@ -36,8 +36,8 @@ depends: task-run/T7
 `parseUnifiedDiff`, `readWorkingDiff` (with untracked files, never touching the index) and `readCommitDiff` pass on recorded patches and a fixture repo, including size limits.
 
 ## T6: Diff viewer component [R4, R5]
-status: todo
-files: packages/vscode/webview/diff-view.tsx, packages/vscode/webview/style.css
+status: done
+files: packages/vscode/webview/**
 depends: T1, T5
 
 Unified and split layouts with line numbers, placeholders for binary and too-large files, layout choice remembered.
