@@ -46,5 +46,5 @@ Agentic coding tools write code fast but lose the "why". After a few iterations 
 
 ## Open questions
 
-- Open source from day one, or private until the extension works?
+- Open source from day one, or private until the extension works? Licensed MIT (2026-10-25); visibility still open.
 - Default after a task run: auto-commit, or leave changes staged for review?

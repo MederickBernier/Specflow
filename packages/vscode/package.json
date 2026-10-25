@@ -2,14 +2,23 @@
   "name": "specflow-vscode",
   "displayName": "Specflow",
   "description": "Spec-driven development: run tasks through your agent harness, trace them in git, and catch drift.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "publisher": "specflow",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.90.0"
   },
   "categories": [
     "Other"
+  ],
+  "keywords": [
+    "spec",
+    "specification",
+    "requirements",
+    "traceability",
+    "claude",
+    "agent"
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
@@ -211,7 +220,8 @@
   },
   "scripts": {
     "build": "tsc --noEmit -p tsconfig.json && esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --sourcemap --outfile=dist/extension.js",
-    "test:smoke": "pnpm build && esbuild test/smoke/index.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --outfile=dist-test/smoke.js && node test/run.ts"
+    "test:smoke": "pnpm build && esbuild test/smoke/index.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --outfile=dist-test/smoke.js && node test/run.ts",
+    "package": "tsc --noEmit -p tsconfig.json && esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --minify --outfile=dist/extension.js && vsce package --no-dependencies --allow-missing-repository --out specflow-vscode.vsix"
   },
   "dependencies": {
     "@specflow/adapter-claude-code": "workspace:*",
@@ -220,6 +230,8 @@
   "devDependencies": {
     "@types/vscode": "~1.90.0",
     "@vscode/test-electron": "^3.1.0",
-    "esbuild": "^0.28.2"
+    "@vscode/vsce": "^4.0.0",
+    "esbuild": "^0.28.2",
+    "ovsx": "^1.3.0"
   }
 }

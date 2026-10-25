@@ -71,8 +71,8 @@ depends: T3, T7, T9
 Every CLI command has a palette entry.
 
 ## T11: README, demo and publishing [R10]
-status: todo
-files: packages/vscode/README.md, .github/workflows/release.yml
+status: doing
+files: packages/vscode/README.md, .github/workflows/release.yml, packages/vscode/package.json, packages/vscode/.vscodeignore, packages/vscode/CHANGELOG.md, LICENSE, README.md
 depends: T10
 
 Published to Marketplace and Open VSX from a tag; someone else installs and runs a task from the README alone.

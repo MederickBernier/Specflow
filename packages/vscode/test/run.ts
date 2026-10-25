@@ -17,7 +17,8 @@ for (const name of Object.keys(process.env)) {
 }
 
 const here = fileURLToPath(new URL(".", import.meta.url));
-const extensionDevelopmentPath = resolve(here, "..");
+// SPECFLOW_EXTENSION_PATH points at an unpacked .vsix, to test the packaged extension.
+const extensionDevelopmentPath = process.env.SPECFLOW_EXTENSION_PATH ? resolve(process.env.SPECFLOW_EXTENSION_PATH) : resolve(here, "..");
 const extensionTestsPath = resolve(here, "../dist-test/smoke.js");
 const cleanFixture = resolve(here, "../../../fixtures/repos/clean");
 const driftFixture = resolve(here, "../../../fixtures/repos/drift-code-changed-since-spec");
