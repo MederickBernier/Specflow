@@ -56,3 +56,7 @@ export type { RecordError, Recording, RunOutcome } from "./run/recorder.js";
 export { changedFiles, messageFileName, recordRun } from "./run/recorder.js";
 export type { StatusError, StatusSnapshot } from "./run/status.js";
 export { restoreTaskStatus, setTaskStatus, tasksFile } from "./run/status.js";
+export type { CommitFile, TraceCommit } from "./trace/commits.js";
+export { parseTraceLog, readTraceCommits, traceLogArgs } from "./trace/commits.js";
+export type { FeatureTrace, RequirementTrace, TaskTrace, Trace, TracedTask, TraceError } from "./trace/trace.js";
+export { trace } from "./trace/trace.js";

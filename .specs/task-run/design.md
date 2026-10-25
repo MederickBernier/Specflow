@@ -176,6 +176,11 @@ A targeted line edit on the task's `status:` line using the location from the sp
 
 `git log --format=<custom> --name-status` filtered by `--grep` on trailer keys, then parsed with `git interpret-trailers --parse`. Results are grouped per requirement and per task.
 
+- `readTraceCommits(git, cwd)` makes one `git log -z --name-status -M -E --grep='^Spec-(Feature|Task|Req):'` call. The format uses `%(trailers:key=...,unfold)`, which applies the same trailer parsing as `interpret-trailers --parse` without a process per commit, so body lines that only mention a key are not trailers.
+- References are normalized to `feature/id`. A bare ID resolves against `Spec-Feature` only when the commit names exactly one feature; `none` means no reference. Commits that end up referencing nothing are left out.
+- Each commit has its hash, author date (kept by rebases), subject and files with their status (renames keep the old path).
+- `trace(tree, commits, "feature[/id]")` returns a requirement trace (tasks referencing it, from any feature, plus commits), a task trace (its requirements plus commits) or a feature trace (both, for every item), all newest first.
+
 ## CLI surface
 
 - `specflow run <feature>/<task> [--harness name] [--allow-dirty] [--json]`, streams events, Ctrl+C cancels

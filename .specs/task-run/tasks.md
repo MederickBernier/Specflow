@@ -57,7 +57,7 @@ depends: T5
 Before and after file diff shows only the status line changed, for every transition; in staged mode the `done` edit is staged with the other changes.
 
 ## T9: Trace from git history [R8]
-status: todo
+status: done
 files: packages/core/src/trace/**
 depends: T7
 
