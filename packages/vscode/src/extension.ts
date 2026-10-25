@@ -80,6 +80,9 @@ function reviewWatcher(changed: () => void): vscode.Disposable {
 }
 
 /** What the workbench shows, gathered from the services, insights, runs and review. */
+/** Drift checks in progress, so the workbench can show progress. */
+let driftChecking = 0;
+
 /** The requirement or task the workbench's Trace tab shows. */
 let traceTarget: TraceInput | undefined;
 
@@ -108,6 +111,7 @@ function workbenchInputs(): WorkbenchInputs {
     ...(harness && { harness }),
     ...(run && { run: { target: run.target, status: run.state.status } }),
     ...(traceTarget && services.has(traceTarget.root) && { trace: traceTarget }),
+    ...(driftChecking > 0 && { driftChecking: true }),
     ...(pending && {
       review: {
         root: pending.tree.root,
@@ -200,7 +204,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<Specfl
       return result;
     }),
     vscode.commands.registerCommand("specflow.checkDrift", async () => {
-      await refreshInsights({ drift: true });
+      driftChecking++;
+      workbench?.changed();
+      try {
+        await refreshInsights({ drift: true });
+      } finally {
+        driftChecking--;
+        workbench?.changed();
+      }
       const findings = [...services.values()].flatMap((s) => insights.get(s.root)?.drift ?? []);
       void vscode.window.showInformationMessage(
         findings.length === 0 ? "Specflow: no drift found." : `Specflow: ${findings.length} drift finding${findings.length === 1 ? "" : "s"}, shown in Problems.`,

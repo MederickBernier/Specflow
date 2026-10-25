@@ -64,8 +64,8 @@ depends: drift-check/T6
 `setTaskStatus` runs on `setMetadataLine` with its tests unchanged; `specflow drift ack` writes the full hash, changes no other line, and refuses unknown refs and commits.
 
 ## T10: Drift tab [R6]
-status: todo
-files: packages/vscode/webview/drift.tsx, packages/vscode/src/workbench/actions.ts, packages/vscode/src/workbench/state.ts
+status: done
+files: packages/vscode/webview/**, packages/vscode/src/workbench/actions.ts, packages/vscode/src/workbench/state.ts, packages/vscode/src/workbench/protocol.ts, packages/vscode/src/extension.ts
 depends: T2, T6, T9
 
 Findings grouped by requirement, Check drift with progress, commit diffs inline, acknowledge after confirmation; "not checked" when there are no results.

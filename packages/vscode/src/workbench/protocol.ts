@@ -86,6 +86,8 @@ export type WorkbenchState = {
   run?: RunView;
   review?: ReviewView;
   trace?: TraceView;
+  /** A drift check is running (workbench-ui/R6). */
+  driftChecking?: true;
 };
 
 /** What a diff request names; the answer repeats it, so the page can match the two. */
@@ -130,6 +132,7 @@ const pageMessage = z.discriminatedUnion("type", [
   z.object({ type: z.literal("run"), root: name, feature: name, task: name }),
   z.object({ type: z.literal("open"), root: name, feature: name, id: name }),
   z.object({ type: z.literal("trace"), root: name, ref: name }),
+  z.object({ type: z.literal("ack"), root: name, feature: name, id: name, commit: z.string().regex(/^[0-9a-f]{7,64}$/).optional() }),
   z.object({ type: z.literal("openDiff"), path: z.string().min(1).max(4096) }),
   z.object({
     type: z.literal("diff"),
@@ -177,6 +180,14 @@ export function parsePageMessage(raw: unknown, state: WorkbenchState | undefined
       const feature = slash > 0 ? findFeature(state, message.root, message.ref.slice(0, slash)) : undefined;
       const id = message.ref.slice(slash + 1);
       return feature && [...feature.requirements, ...feature.tasks].some((item) => item.id === id) ? message : undefined;
+    }
+    case "ack": {
+      // Only a finding the state shows, with its own commit (or none, for a finding that has none).
+      const root = state?.roots.find((r) => r.root === message.root);
+      const shown =
+        root?.drift.checked &&
+        root.drift.findings.some((f) => f.feature === message.feature && f.id === message.id && f.commit === message.commit);
+      return shown ? message : undefined;
     }
     case "openDiff":
       return state?.review?.files.some((f) => f.path === message.path) ? message : undefined;

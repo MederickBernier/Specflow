@@ -33,6 +33,10 @@ export async function handleIntent(intent: WorkbenchIntent, deps: ActionDeps): P
     case "trace":
       deps.selectTrace(intent.root, intent.ref);
       break;
+    case "ack":
+      // Through the palette command, which confirms first (workbench-ui/R6). A finding without a commit is acknowledged at HEAD.
+      await vscode.commands.executeCommand("specflow.ackDrift", `${intent.feature}/${intent.id}`, intent.commit ?? "HEAD");
+      break;
     case "openDiff":
       await vscode.commands.executeCommand("specflow.openDiff", intent.path);
       break;

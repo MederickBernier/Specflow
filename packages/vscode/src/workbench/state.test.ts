@@ -191,6 +191,11 @@ describe("buildWorkbenchState (workbench-ui/R1)", () => {
     });
   });
 
+  it("says when a drift check is running", () => {
+    expect(buildWorkbenchState(inputs({ driftChecking: true }), 1).driftChecking).toBe(true);
+    expect("driftChecking" in buildWorkbenchState(inputs({ driftChecking: false }), 1)).toBe(false);
+  });
+
   it("is plain JSON", () => {
     const state = buildWorkbenchState(inputs({ roots: [{ root: "/repo", name: "repo", tree, insights: { commits: [], drift: [finding] } }] }), 1);
     expect(JSON.parse(JSON.stringify(state))).toEqual(state);

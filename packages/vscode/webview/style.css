@@ -685,3 +685,80 @@ button.commit:hover .subject {
 .commit-diff {
   margin-top: 16px;
 }
+
+/* Drift (workbench-ui/R6) */
+
+.drift-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 12px;
+}
+
+.drift-summary {
+  flex: 1;
+}
+
+.drift-feature h2 {
+  margin: 16px 0 6px;
+  font-size: 1.1em;
+}
+
+.drift-requirement h3 {
+  margin: 8px 0 4px;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.drift-requirement ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.drift-finding {
+  padding: 6px 8px;
+  margin: 0 0 6px;
+  border-left: 3px solid var(--vscode-editorWarning-foreground);
+  background: var(--vscode-editorWidget-background);
+}
+
+.drift-finding.error {
+  border-left-color: var(--vscode-errorForeground);
+}
+
+.drift-finding.info {
+  border-left-color: var(--vscode-editorInfo-foreground);
+}
+
+.finding-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.finding-line .codicon-warning {
+  color: var(--vscode-editorWarning-foreground);
+}
+
+.finding-line .codicon-error {
+  color: var(--vscode-errorForeground);
+}
+
+.rule {
+  font-family: var(--vscode-editor-font-family);
+  color: var(--vscode-descriptionForeground);
+}
+
+.finding-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+  font-size: 0.9em;
+}
+
+.drift-finding .commit-diff {
+  margin-top: 8px;
+}

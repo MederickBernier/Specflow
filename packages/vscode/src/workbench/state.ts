@@ -24,7 +24,14 @@ export type ReviewInput = {
 export type TraceInput = { root: string; ref: string };
 
 /** Everything the workbench shows, gathered by the extension. */
-export type WorkbenchInputs = { roots: RootInput[]; harness?: HarnessInput; run?: RunInput; review?: ReviewInput; trace?: TraceInput };
+export type WorkbenchInputs = {
+  roots: RootInput[];
+  harness?: HarnessInput;
+  run?: RunInput;
+  review?: ReviewInput;
+  trace?: TraceInput;
+  driftChecking?: boolean;
+};
 
 /** Builds the workbench state from what the extension knows, without the VS Code API. */
 export function buildWorkbenchState(inputs: WorkbenchInputs, revision: number): WorkbenchState {
@@ -35,6 +42,7 @@ export function buildWorkbenchState(inputs: WorkbenchInputs, revision: number): 
     ...(inputs.run && { run: { target: inputs.run.target, status: inputs.run.status } }),
     ...(inputs.review && { review: reviewView(inputs.review) }),
     ...(inputs.trace && { trace: traceView(inputs.roots, inputs.trace) }),
+    ...(inputs.driftChecking && { driftChecking: true as const }),
   };
 }
 

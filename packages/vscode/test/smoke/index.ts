@@ -515,6 +515,41 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
   });
 
+  // workbench-ui/R6: the Drift tab's check fills in findings; their commit diffs come back; only shown findings can be acknowledged.
+  test("checks drift from the Drift tab and shows a finding's commit", async () => {
+    type Finding = { feature: string; id?: string; commit?: string };
+    type Workbench = {
+      state?: { revision: number; driftChecking?: boolean; roots: { root: string; drift: { checked: boolean; findings?: Finding[] } }[] };
+      tab?: string;
+      receive: (m: unknown) => unknown;
+      send: (m: unknown) => void;
+    };
+    const api = extension().exports as { workbench: Workbench };
+    await vscode.commands.executeCommand("specflow.openWorkbench", { tab: "drift" });
+    await eventually(() => api.workbench.tab === "drift", "the Drift tab");
+    assert.ok(api.workbench.receive({ type: "command", command: "checkDrift" }));
+    await eventually(() => api.workbench.state?.roots[0]?.drift.checked === true && !api.workbench.state.driftChecking, "the check to finish");
+    const root = api.workbench.state!.roots[0]!;
+    const [finding] = root.drift.findings!;
+    assert.equal(finding?.feature, "auth");
+
+    const sent: { type: string; source?: string; files?: unknown[] }[] = [];
+    const send = api.workbench.send.bind(api.workbench);
+    api.workbench.send = (message) => {
+      sent.push(message as (typeof sent)[number]);
+      send(message);
+    };
+    try {
+      assert.ok(api.workbench.receive({ type: "diff", source: "commit", root: root.root, commit: finding!.commit, revision: api.workbench.state!.revision }));
+      await eventually(() => sent.some((m) => m.type === "diff" && m.source === "commit" && (m.files?.length ?? 0) > 0), "the finding's commit diff");
+    } finally {
+      api.workbench.send = send;
+    }
+    assert.equal(api.workbench.receive({ type: "ack", root: root.root, feature: "auth", id: finding!.id, commit: "0000000" }), undefined);
+    assert.equal(api.workbench.receive({ type: "ack", root: root.root, feature: "auth", id: "R9", commit: finding!.commit }), undefined);
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
   // workbench-ui/R7: Acknowledge drift writes drift-ack on the requirement and the finding goes away. Runs last: it clears the fixture's finding.
   test("acknowledges drift from the palette", async () => {
     const findings = (await vscode.commands.executeCommand("specflow.checkDrift")) as { evidence?: { commit?: string } }[];

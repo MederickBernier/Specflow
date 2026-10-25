@@ -6,15 +6,16 @@ import { useDiffLayout } from "./diff-view.tsx";
 import { useDiffs } from "./diffs.ts";
 import { Review } from "./review.tsx";
 import { Trace } from "./trace.tsx";
+import { Drift } from "./drift.tsx";
 import { type FeatureRef, Overview } from "./overview.tsx";
 import type { WebviewApi } from "./vscode-api.ts";
 
-const labels: Record<WorkbenchTab, { title: string; icon: string; empty: string }> = {
-  overview: { title: "Overview", icon: "dashboard", empty: "Where every feature stands." },
-  board: { title: "Board", icon: "project", empty: "Tasks by status, ready to run." },
-  review: { title: "Review", icon: "diff", empty: "The diff of a run under review, or of the working tree." },
-  trace: { title: "Trace", icon: "git-commit", empty: "A requirement's tasks and commits." },
-  drift: { title: "Drift", icon: "warning", empty: "Code and spec that no longer agree." },
+const labels: Record<WorkbenchTab, { title: string; icon: string; hint: string }> = {
+  overview: { title: "Overview", icon: "dashboard", hint: "Where every feature stands." },
+  board: { title: "Board", icon: "project", hint: "Tasks by status, ready to run." },
+  review: { title: "Review", icon: "diff", hint: "The diff of a run under review, or of the working tree." },
+  trace: { title: "Trace", icon: "git-commit", hint: "A requirement's tasks and commits." },
+  drift: { title: "Drift", icon: "warning", hint: "Code and spec that no longer agree." },
 };
 
 /**
@@ -96,6 +97,7 @@ export function App({ api, initialTab, state }: { api: WebviewApi; initialTab?: 
             aria-controls={`panel-${id}`}
             tabIndex={id === tab ? 0 : -1}
             class={id === tab ? "tab selected" : "tab"}
+            title={labels[id].hint}
             onClick={() => select(id)}
           >
             <span class={`codicon codicon-${labels[id].icon}`} aria-hidden="true" />
@@ -130,7 +132,15 @@ export function App({ api, initialTab, state }: { api: WebviewApi; initialTab?: 
             onOpen={(root, feature, id) => api.postMessage({ type: "open", root, feature, id })}
           />
         ) : (
-          <p class="empty">{labels[tab].empty}</p>
+          <Drift
+            state={state}
+            diffs={diffs}
+            layout={layout}
+            onLayout={setLayout}
+            onCheck={() => command("checkDrift")}
+            onAck={(root, finding) => api.postMessage({ type: "ack", root, feature: finding.feature, id: finding.id, ...(finding.commit && { commit: finding.commit }) })}
+            onOpen={(root, feature, id) => api.postMessage({ type: "open", root, feature, id })}
+          />
         )}
       </section>
     </div>

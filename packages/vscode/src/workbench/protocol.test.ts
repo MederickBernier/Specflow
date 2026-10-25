@@ -125,6 +125,25 @@ describe("parsePageMessage (workbench-ui/R1)", () => {
     expect(parsePageMessage({ type: "diff", source: "commit", root: "/repo", commit: "fedcba9876", revision: 3 }, state)).toBeUndefined();
   });
 
+  // workbench-ui/R6: acknowledge only a finding the state shows, with its own commit.
+  it("accepts acknowledgements of shown findings only", () => {
+    expect(parsePageMessage({ type: "ack", root: "/repo", feature: "auth", id: "R1", commit: "abc1234" }, state)).toEqual({
+      type: "ack",
+      root: "/repo",
+      feature: "auth",
+      id: "R1",
+      commit: "abc1234",
+    });
+    expect(parsePageMessage({ type: "ack", root: "/repo", feature: "auth", id: "R1", commit: "def5678" }, state)).toBeUndefined();
+    expect(parsePageMessage({ type: "ack", root: "/repo", feature: "auth", id: "R1" }, state)).toBeUndefined();
+    expect(parsePageMessage({ type: "ack", root: "/repo", feature: "auth", id: "R2", commit: "abc1234" }, state)).toBeUndefined();
+    expect(parsePageMessage({ type: "ack", root: "/repo", feature: "auth", id: "R1", commit: "HEAD" }, state)).toBeUndefined();
+    const unchecked = { ...state, roots: [{ ...state.roots[0]!, drift: { checked: false as const } }] };
+    expect(parsePageMessage({ type: "ack", root: "/repo", feature: "auth", id: "R1", commit: "abc1234" }, unchecked)).toBeUndefined();
+    const noCommit = { ...state, roots: [{ ...state.roots[0]!, drift: { checked: true as const, findings: [{ rule: "drift/unimplemented", severity: "info" as const, message: "m", feature: "auth", id: "R1", line: 3 }] } }] };
+    expect(parsePageMessage({ type: "ack", root: "/repo", feature: "auth", id: "R1" }, noCommit)).toBeDefined();
+  });
+
   it("accepts commits the state shows, and only as hashes", () => {
     expect(parsePageMessage({ type: "diff", source: "commit", root: "/repo", commit: "abc1234", revision: 3 }, state)).toBeDefined();
     expect(parsePageMessage({ type: "diff", source: "commit", root: "/repo", commit: "def5678", revision: 3 }, state)).toBeUndefined();
