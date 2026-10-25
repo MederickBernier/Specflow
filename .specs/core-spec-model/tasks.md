@@ -1,7 +1,7 @@
 # core-spec-model: tasks
 
 ## T1: Set up the monorepo and CI []
-status: todo
+status: done
 files: package.json, pnpm-workspace.yaml, tsconfig.base.json, .github/workflows/ci.yml
 
 Four packages exist, `pnpm build` and `pnpm test` pass locally and in CI. No requirement yet; this unblocks everything.
