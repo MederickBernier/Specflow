@@ -58,6 +58,22 @@ export type ReviewView = {
   specNotes: string[];
 };
 
+/** A commit that implements a traced item: newest first, with the files it touched. */
+export type CommitView = { hash: string; date: string; subject: string; files: { status: string; path: string; from?: string }[] };
+
+/** The requirement or task the Trace tab shows (workbench-ui/R5), or why it cannot be traced. */
+export type TraceView =
+  | {
+      root: string;
+      ref: string;
+      kind: "requirement" | "task";
+      title: string;
+      status: string;
+      tasks: { feature: string; id: string; title: string; status: TaskView["status"] }[];
+      commits: CommitView[];
+    }
+  | { root: string; ref: string; error: string };
+
 /**
  * The plain-JSON snapshot posted to the workbench page (workbench-ui/R1).
  * `revision` grows with every snapshot, so the page knows when cached diffs
@@ -69,6 +85,7 @@ export type WorkbenchState = {
   harness: HarnessView;
   run?: RunView;
   review?: ReviewView;
+  trace?: TraceView;
 };
 
 /** What a diff request names; the answer repeats it, so the page can match the two. */
@@ -112,6 +129,7 @@ const pageMessage = z.discriminatedUnion("type", [
   z.object({ type: z.literal("command"), command: z.enum(commandNames) }),
   z.object({ type: z.literal("run"), root: name, feature: name, task: name }),
   z.object({ type: z.literal("open"), root: name, feature: name, id: name }),
+  z.object({ type: z.literal("trace"), root: name, ref: name }),
   z.object({ type: z.literal("openDiff"), path: z.string().min(1).max(4096) }),
   z.object({
     type: z.literal("diff"),
@@ -153,6 +171,13 @@ export function parsePageMessage(raw: unknown, state: WorkbenchState | undefined
       const known = feature && [...feature.requirements, ...feature.tasks].some((item) => item.id === message.id);
       return known ? message : undefined;
     }
+    case "trace": {
+      // A requirement or task of a feature the state shows, as `feature/ID`.
+      const slash = message.ref.lastIndexOf("/");
+      const feature = slash > 0 ? findFeature(state, message.root, message.ref.slice(0, slash)) : undefined;
+      const id = message.ref.slice(slash + 1);
+      return feature && [...feature.requirements, ...feature.tasks].some((item) => item.id === id) ? message : undefined;
+    }
     case "openDiff":
       return state?.review?.files.some((f) => f.path === message.path) ? message : undefined;
     case "diff":
@@ -179,12 +204,14 @@ function diffAllowed(state: WorkbenchState | undefined, message: Extract<PageMes
       // The whole working tree, read only; single files come from its own answer.
       return message.path === undefined && message.commit === undefined;
     case "commit":
-      return message.commit !== undefined && message.path === undefined && knownCommits(root).has(message.commit);
+      return message.commit !== undefined && message.path === undefined && knownCommits(state!, root).has(message.commit);
   }
 }
 
-function knownCommits(root: WorkbenchState["roots"][number]): Set<string> {
+// Commits the page shows for a root: drift evidence and the traced item's commits.
+function knownCommits(state: WorkbenchState, root: WorkbenchState["roots"][number]): Set<string> {
   const commits = new Set<string>();
   if (root.drift.checked) for (const finding of root.drift.findings) if (finding.commit) commits.add(finding.commit);
+  if (state.trace?.root === root.root && "commits" in state.trace) for (const commit of state.trace.commits) commits.add(commit.hash);
   return commits;
 }

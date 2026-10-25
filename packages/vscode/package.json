@@ -84,6 +84,12 @@
         "category": "Specflow"
       },
       {
+        "command": "specflow.traceInWorkbench",
+        "title": "Trace in workbench",
+        "category": "Specflow",
+        "icon": "$(dashboard)"
+      },
+      {
         "command": "specflow.checkDrift",
         "title": "Check drift",
         "category": "Specflow"
@@ -142,6 +148,10 @@
           "when": "specflow.hasSpecs"
         },
         {
+          "command": "specflow.traceInWorkbench",
+          "when": "false"
+        },
+        {
           "command": "specflow.checkDrift",
           "when": "specflow.hasSpecs"
         },
@@ -194,6 +204,11 @@
         },
         {
           "command": "specflow.showTrace",
+          "when": "view == specflow.specs && viewItem =~ /^(requirement|task)$/",
+          "group": "2_trace"
+        },
+        {
+          "command": "specflow.traceInWorkbench",
           "when": "view == specflow.specs && viewItem =~ /^(requirement|task)$/",
           "group": "2_trace"
         }

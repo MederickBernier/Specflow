@@ -9,6 +9,8 @@ export type ActionDeps = {
   fs: FileSystem;
   /** Paths of the run under review, relative to its root. */
   reviewFiles: () => string[];
+  /** Makes the Trace tab show `ref` in `root`. */
+  selectTrace: (root: string, ref: string) => void;
   send: (message: HostMessage) => void;
 };
 
@@ -27,6 +29,9 @@ export async function handleIntent(intent: WorkbenchIntent, deps: ActionDeps): P
       break;
     case "open":
       await vscode.commands.executeCommand("specflow.show", `${intent.feature}/${intent.id}`);
+      break;
+    case "trace":
+      deps.selectTrace(intent.root, intent.ref);
       break;
     case "openDiff":
       await vscode.commands.executeCommand("specflow.openDiff", intent.path);

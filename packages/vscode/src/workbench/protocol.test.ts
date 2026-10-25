@@ -107,6 +107,24 @@ describe("parsePageMessage (workbench-ui/R1)", () => {
     expect(parsePageMessage({ type: "diff", source: "working", root: "/elsewhere", revision: 3 }, state)).toBeUndefined();
   });
 
+  it("accepts traces of requirements and tasks the state shows", () => {
+    expect(parsePageMessage({ type: "trace", root: "/repo", ref: "auth/R1" }, state)).toEqual({ type: "trace", root: "/repo", ref: "auth/R1" });
+    expect(parsePageMessage({ type: "trace", root: "/repo", ref: "auth/T1" }, state)).toBeDefined();
+    expect(parsePageMessage({ type: "trace", root: "/repo", ref: "auth/R9" }, state)).toBeUndefined();
+    expect(parsePageMessage({ type: "trace", root: "/repo", ref: "auth" }, state)).toBeUndefined();
+    expect(parsePageMessage({ type: "trace", root: "/repo", ref: "billing/R1" }, state)).toBeUndefined();
+    expect(parsePageMessage({ type: "trace", root: "/other", ref: "auth/R1" }, state)).toBeUndefined();
+  });
+
+  it("accepts the commits of the traced item", () => {
+    const traced: WorkbenchState = {
+      ...state,
+      trace: { root: "/repo", ref: "auth/R1", kind: "requirement", title: "Sign in", status: "approved", tasks: [], commits: [{ hash: "fedcba9876", date: "", subject: "", files: [] }] },
+    };
+    expect(parsePageMessage({ type: "diff", source: "commit", root: "/repo", commit: "fedcba9876", revision: 3 }, traced)).toBeDefined();
+    expect(parsePageMessage({ type: "diff", source: "commit", root: "/repo", commit: "fedcba9876", revision: 3 }, state)).toBeUndefined();
+  });
+
   it("accepts commits the state shows, and only as hashes", () => {
     expect(parsePageMessage({ type: "diff", source: "commit", root: "/repo", commit: "abc1234", revision: 3 }, state)).toBeDefined();
     expect(parsePageMessage({ type: "diff", source: "commit", root: "/repo", commit: "def5678", revision: 3 }, state)).toBeUndefined();

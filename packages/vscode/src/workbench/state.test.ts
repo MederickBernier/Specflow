@@ -1,4 +1,4 @@
-import { defaultConfig, type Feature, type Finding, lint, type SpecTree } from "@specflow/core";
+import { defaultConfig, type Feature, type Finding, lint, type SpecTree, type TraceCommit } from "@specflow/core";
 import { describe, expect, it } from "vitest";
 import { buildWorkbenchState, type WorkbenchInputs } from "./state.js";
 
@@ -156,6 +156,38 @@ describe("buildWorkbenchState (workbench-ui/R1)", () => {
         { path: "src/b.ts", change: "added", outOfScope: true },
       ],
       specNotes: ["R2 does not say how long the cookie lasts"],
+    });
+  });
+
+  // workbench-ui/R5: the traced item's tasks and its commits, newest first.
+  describe("trace", () => {
+    const commits: TraceCommit[] = [
+      { hash: "b".repeat(40), date: "2026-02-02T00:00:00+00:00", subject: "feat: cookie", files: [{ status: "A", path: "src/c.ts" }], features: ["auth"], tasks: ["auth/T2"], reqs: ["auth/R2"] },
+      { hash: "a".repeat(40), date: "2026-01-01T00:00:00+00:00", subject: "feat: form", files: [{ status: "R100", from: "x.ts", path: "src/a.ts" }], features: ["auth"], tasks: ["auth/T1"], reqs: ["auth/R1"] },
+    ];
+    const withTrace = (ref: string) => buildWorkbenchState({ roots: [{ root: "/repo", name: "repo", tree, insights: { commits } }], trace: { root: "/repo", ref } }, 1).trace;
+
+    it("traces a requirement to its tasks and commits", () => {
+      expect(withTrace("auth/R1")).toEqual({
+        root: "/repo",
+        ref: "auth/R1",
+        kind: "requirement",
+        title: "Sign in",
+        status: "approved",
+        tasks: [{ feature: "auth", id: "T1", title: "Login form", status: "done" }],
+        commits: [{ hash: "a".repeat(40), date: "2026-01-01T00:00:00+00:00", subject: "feat: form", files: [{ status: "R100", path: "src/a.ts", from: "x.ts" }] }],
+      });
+    });
+
+    it("traces a task", () => {
+      expect(withTrace("auth/T2")).toMatchObject({ kind: "task", title: "Cookie", status: "todo", tasks: [{ id: "T2" }], commits: [{ subject: "feat: cookie" }] });
+    });
+
+    it("says why an item cannot be traced", () => {
+      expect(withTrace("auth/R7")).toEqual({ root: "/repo", ref: "auth/R7", error: expect.stringContaining("R7") });
+      expect(withTrace("auth")).toEqual({ root: "/repo", ref: "auth", error: "Pick a requirement or a task" });
+      const broken = buildWorkbenchState({ roots: [{ root: "/repo", name: "repo", tree, error: "bad config" }], trace: { root: "/repo", ref: "auth/R1" } }, 1);
+      expect(broken.trace).toEqual({ root: "/repo", ref: "auth/R1", error: "bad config" });
     });
   });
 

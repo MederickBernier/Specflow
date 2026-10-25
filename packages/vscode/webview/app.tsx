@@ -5,6 +5,7 @@ import { Board, type TaskRef } from "./board.tsx";
 import { useDiffLayout } from "./diff-view.tsx";
 import { useDiffs } from "./diffs.ts";
 import { Review } from "./review.tsx";
+import { Trace } from "./trace.tsx";
 import { type FeatureRef, Overview } from "./overview.tsx";
 import type { WebviewApi } from "./vscode-api.ts";
 
@@ -118,6 +119,15 @@ export function App({ api, initialTab, state }: { api: WebviewApi; initialTab?: 
             onLayout={setLayout}
             onCommand={command}
             onOpenNative={(path) => api.postMessage({ type: "openDiff", path })}
+          />
+        ) : tab === "trace" ? (
+          <Trace
+            state={state}
+            diffs={diffs}
+            layout={layout}
+            onLayout={setLayout}
+            onPick={(root, ref) => api.postMessage({ type: "trace", root, ref })}
+            onOpen={(root, feature, id) => api.postMessage({ type: "open", root, feature, id })}
           />
         ) : (
           <p class="empty">{labels[tab].empty}</p>

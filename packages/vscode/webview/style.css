@@ -595,3 +595,93 @@ button.link:hover {
   color: var(--vscode-editorWarning-foreground);
   font-size: 0.9em;
 }
+
+/* Trace (workbench-ui/R5) */
+
+.trace-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 12px;
+}
+
+.trace-toolbar h3 {
+  flex: 1;
+  margin: 0;
+}
+
+.trace-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.trace-header h2 {
+  margin: 8px 0;
+  font-size: 1.15em;
+}
+
+.trace h3 {
+  font-size: 1em;
+  font-weight: 600;
+  margin: 16px 0 6px;
+}
+
+.trace-tasks,
+.trace-commits {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.trace-tasks li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+}
+
+.trace-commits li {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 6px;
+  border-radius: 2px;
+}
+
+.trace-commits li.selected {
+  background: var(--vscode-list-inactiveSelectionBackground);
+}
+
+button.commit {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--vscode-foreground);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.commit .hash {
+  font-family: var(--vscode-editor-font-family);
+  color: var(--vscode-textLink-foreground);
+}
+
+button.commit:hover .subject {
+  text-decoration: underline;
+}
+
+.commit-files {
+  font-size: 0.85em;
+  padding-left: 9ch;
+  overflow-wrap: anywhere;
+}
+
+.commit-diff {
+  margin-top: 16px;
+}

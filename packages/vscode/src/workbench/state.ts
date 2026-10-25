@@ -1,6 +1,6 @@
-import { type Feature, type Finding, lint, resolveRef, type SpecTree, type Task } from "@specflow/core";
+import { type Feature, type Finding, lint, resolveRef, type SpecTree, type Task, trace } from "@specflow/core";
 import type { RootInsights } from "../insights.js";
-import type { DriftView, HarnessView, ReviewView, RootView, RunView, WorkbenchState } from "./protocol.js";
+import type { DriftView, HarnessView, ReviewView, RootView, RunView, TraceView, WorkbenchState } from "./protocol.js";
 
 /** One spec root as the workbench is given it: its tree or load error, and its trace and drift data. */
 export type RootInput = { root: string; name: string; tree?: SpecTree; error?: string; insights?: RootInsights };
@@ -20,8 +20,11 @@ export type ReviewInput = {
   specNotes: string[];
 };
 
+/** The requirement or task picked for the Trace tab, as `feature/ID` in a root. */
+export type TraceInput = { root: string; ref: string };
+
 /** Everything the workbench shows, gathered by the extension. */
-export type WorkbenchInputs = { roots: RootInput[]; harness?: HarnessInput; run?: RunInput; review?: ReviewInput };
+export type WorkbenchInputs = { roots: RootInput[]; harness?: HarnessInput; run?: RunInput; review?: ReviewInput; trace?: TraceInput };
 
 /** Builds the workbench state from what the extension knows, without the VS Code API. */
 export function buildWorkbenchState(inputs: WorkbenchInputs, revision: number): WorkbenchState {
@@ -31,7 +34,30 @@ export function buildWorkbenchState(inputs: WorkbenchInputs, revision: number): 
     harness: harnessView(inputs.harness),
     ...(inputs.run && { run: { target: inputs.run.target, status: inputs.run.status } }),
     ...(inputs.review && { review: reviewView(inputs.review) }),
+    ...(inputs.trace && { trace: traceView(inputs.roots, inputs.trace) }),
   };
+}
+
+// workbench-ui/R5: the traced item's tasks and commits, through core's trace over the root's trace commits.
+function traceView(roots: RootInput[], target: TraceInput): TraceView {
+  const root = roots.find((r) => r.root === target.root);
+  if (!root?.tree || root.error) return { ...target, error: root?.error ?? "Specs not loaded" };
+  const result = trace(root.tree, root.insights?.commits ?? [], target.ref);
+  if (!result.ok) return { ...target, error: result.error.message };
+  const traced = result.value;
+  if (traced.kind === "feature") return { ...target, error: "Pick a requirement or a task" };
+  const commits = traced.trace.commits.map((c) => ({
+    hash: c.hash,
+    date: c.date,
+    subject: c.subject,
+    files: c.files.map((f) => ({ status: f.status, path: f.path, ...(f.from && { from: f.from }) })),
+  }));
+  if (traced.kind === "task") {
+    const { feature, id, title, status } = traced.trace;
+    return { ...target, kind: "task", title, status, tasks: [{ feature, id, title, status }], commits };
+  }
+  const requirement = root.tree.features.find((f) => f.name === traced.trace.feature)?.requirements.find((r) => r.id === traced.trace.id);
+  return { ...target, kind: "requirement", title: traced.trace.title, status: requirement?.status ?? "approved", tasks: traced.trace.tasks, commits };
 }
 
 function rootView(input: RootInput): RootView {

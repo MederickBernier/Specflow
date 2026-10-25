@@ -50,8 +50,8 @@ depends: T2, T6, vscode-extension/T7
 A staged run's files, counts, scope marks, spec notes and inline diffs show, update on edit, and accept or discard through the existing commands; idle, the working tree diff shows read only.
 
 ## T8: Trace tab [R5]
-status: todo
-files: packages/vscode/webview/trace.tsx, packages/vscode/src/workbench/state.ts, packages/vscode/src/workbench/actions.ts, packages/vscode/src/codelens.ts, packages/vscode/src/lens-titles.ts
+status: done
+files: packages/vscode/webview/**, packages/vscode/src/workbench/state.ts, packages/vscode/src/workbench/actions.ts, packages/vscode/src/workbench/protocol.ts, packages/vscode/src/workbench/panel.ts, packages/vscode/src/codelens.ts, packages/vscode/src/lens-titles.ts, packages/vscode/src/extension.ts, packages/vscode/package.json
 depends: T2, T6, vscode-extension/T8
 
 Picking a requirement or task shows its tasks and commits; a commit's diff renders inline; the requirement lens opens the workbench on it.

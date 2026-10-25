@@ -11,8 +11,8 @@ export const workbenchViewType = "specflow.workbench";
 /** How long after the last change a new state is posted; well inside workbench-ui/R1's 1 second. */
 export const stateDebounceMs = 100;
 
-/** Options of `specflow.openWorkbench`. */
-export type OpenWorkbenchOptions = { tab?: WorkbenchTab };
+/** Options of `specflow.openWorkbench`: the tab to show, and for the Trace tab the `feature/ID` to trace, in `root` when given. */
+export type OpenWorkbenchOptions = { tab?: WorkbenchTab; ref?: string; root?: string };
 
 /** A page message that asks the extension to do something, for the tabs' actions. */
 export type WorkbenchIntent = Exclude<PageMessage, { type: "ready" | "tab" | "rendered" }>;

@@ -17,7 +17,7 @@ import type { ExplorerSource } from "./explorer-nodes.js";
 import { SpecService } from "./spec-service.js";
 import { corePath, VsCodeFileSystem } from "./vscode-fs.js";
 import { type OpenWorkbenchOptions, WorkbenchPanel, workbenchViewType } from "./workbench/panel.js";
-import type { WorkbenchInputs } from "./workbench/state.js";
+import type { TraceInput, WorkbenchInputs } from "./workbench/state.js";
 import { handleIntent } from "./workbench/actions.js";
 
 /** Context key: true when a workspace folder has specs. Commands other than init are only shown then. */
@@ -80,6 +80,19 @@ function reviewWatcher(changed: () => void): vscode.Disposable {
 }
 
 /** What the workbench shows, gathered from the services, insights, runs and review. */
+/** The requirement or task the workbench's Trace tab shows. */
+let traceTarget: TraceInput | undefined;
+
+/** Picks what the Trace tab shows; the root defaults to the one with that feature. */
+function selectTrace(ref: string, root?: string): boolean {
+  const feature = ref.slice(0, ref.lastIndexOf("/"));
+  const service = (root && services.get(root)) || [...services.values()].find((s) => s.tree?.features.some((f) => f.name === feature));
+  if (!service) return false;
+  traceTarget = { root: service.root, ref };
+  workbench?.changed();
+  return true;
+}
+
 function workbenchInputs(): WorkbenchInputs {
   const pending = review.pending;
   const run = runs.current;
@@ -94,6 +107,7 @@ function workbenchInputs(): WorkbenchInputs {
     })),
     ...(harness && { harness }),
     ...(run && { run: { target: run.target, status: run.state.status } }),
+    ...(traceTarget && services.has(traceTarget.root) && { trace: traceTarget }),
     ...(pending && {
       review: {
         root: pending.tree.root,
@@ -135,6 +149,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Specfl
           git,
           fs,
           reviewFiles: () => review.pending?.recording.files ?? [],
+          selectTrace: (root, ref) => void selectTrace(ref, root),
           send: (message) => panel.send(message),
         }),
     ),
@@ -142,7 +157,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<Specfl
     reviewWatcher(() => panel.changed()),
     vscode.window.registerWebviewPanelSerializer(workbenchViewType, panel),
     vscode.commands.registerCommand("specflow.openWorkbench", (options?: OpenWorkbenchOptions) => {
-      panel.open(options);
+      // workbench-ui/R5: the requirement lens opens the Trace tab on its requirement.
+      if (options?.ref && selectTrace(options.ref, options.root)) panel.open({ tab: "trace" });
+      else panel.open(options);
+    }),
+    vscode.commands.registerCommand("specflow.traceInWorkbench", (node?: ExplorerNode) => {
+      if (!node?.ref) return;
+      if (selectTrace(`${node.ref.feature}/${node.ref.id}`, node.ref.root)) panel.open({ tab: "trace" });
     }),
     vscode.commands.registerCommand("specflow.init", () => initialize()),
     vscode.commands.registerCommand("specflow.lint", () => lintCommand([...services.values()], diagnostics)),

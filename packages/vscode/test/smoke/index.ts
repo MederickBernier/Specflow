@@ -254,7 +254,7 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
 
   // vscode-extension/R4, R7: lenses on task and requirement headings; the trace opens from them.
   test("shows run and summary lenses, and the trace behind a requirement", async () => {
-    const api = extension().exports as { refreshInsights: () => Promise<void> };
+    const api = extension().exports as { refreshInsights: () => Promise<void>; services: () => { root: string }[] };
     await api.refreshInsights();
     const root = vscode.workspace.workspaceFolders![0]!.uri;
     // executeCodeLensProvider only works on documents that are already open.
@@ -266,8 +266,14 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
     const tasks = await lensesOf(".specs/accounts/tasks.md");
     assert.deepEqual(tasks[2], [15, "$(play) Run T3 again", "specflow.runTask", ["accounts", "T3"]]);
 
-    const requirements = await lensesOf(".specs/accounts/requirements.md");
+    const allRequirementLenses = await lensesOf(".specs/accounts/requirements.md");
+    const requirements = allRequirementLenses.filter((l) => l[2] === "specflow.showTrace");
     assert.deepEqual(requirements[1]?.[0], 20);
+    // workbench-ui/R5: each requirement also gets a lens opening its trace in the workbench.
+    assert.deepEqual(
+      allRequirementLenses.filter((l) => l[2] === "specflow.openWorkbench")[1],
+      [20, "$(dashboard) Open in workbench", "specflow.openWorkbench", [{ tab: "trace", ref: "accounts/R2", root: api.services()[0]!.root }]],
+    );
     assert.match(String(requirements[1]?.[1]), /^1 task · last commit \d{4}-\d{2}-\d{2} · (drift not checked|no drift|\d+ drift findings?)$/);
     assert.deepEqual(requirements[1]?.slice(2), ["specflow.showTrace", ["accounts/R2"]]);
 
@@ -377,6 +383,39 @@ if (process.env.SPECFLOW_SMOKE === "with-specs") {
     } finally {
       api.workbench.send = send;
     }
+  });
+
+  // workbench-ui/R5: the lens and the Specs view open the Trace tab on an item; a commit's diff comes back inline.
+  test("traces a requirement in the workbench and shows a commit's diff", async () => {
+    type Traced = { ref: string; kind?: string; commits?: { hash: string; subject: string }[] };
+    type Workbench = { state?: { revision: number; trace?: Traced }; tab?: string; receive: (m: unknown) => unknown; send: (m: unknown) => void };
+    const api = extension().exports as { workbench: Workbench; services: () => { root: string }[] };
+    const root = api.services()[0]!.root;
+
+    await vscode.commands.executeCommand("specflow.openWorkbench", { tab: "trace", ref: "accounts/R2", root });
+    await eventually(() => api.workbench.tab === "trace" && api.workbench.state?.trace?.ref === "accounts/R2", "the Trace tab on accounts/R2");
+    const traced = api.workbench.state!.trace!;
+    assert.equal(traced.kind, "requirement");
+    assert.ok(traced.commits!.some((c) => c.subject === "feat(accounts): Add lockout counter"), "the fixture's commit is traced");
+
+    const sent: { type: string; source?: string; files?: { path: string }[] }[] = [];
+    const send = api.workbench.send.bind(api.workbench);
+    api.workbench.send = (message) => {
+      sent.push(message as (typeof sent)[number]);
+      send(message);
+    };
+    try {
+      const hash = traced.commits!.at(-1)!.hash;
+      assert.ok(api.workbench.receive({ type: "diff", source: "commit", root, commit: hash, revision: api.workbench.state!.revision }));
+      await eventually(() => sent.some((m) => m.type === "diff" && m.source === "commit" && (m.files?.length ?? 0) > 0), "the commit's diff");
+    } finally {
+      api.workbench.send = send;
+    }
+
+    await vscode.commands.executeCommand("specflow.traceInWorkbench", { ref: { root, feature: "accounts", id: "T3" } });
+    await eventually(() => api.workbench.state?.trace?.ref === "accounts/T3", "the Specs view's pick");
+    assert.ok(api.workbench.receive({ type: "trace", root, ref: "accounts/R1" }));
+    await eventually(() => api.workbench.state?.trace?.ref === "accounts/R1", "the page's pick");
   });
 
   // workbench-ui/R1: a spec change reaches the open page within 1 second; the page renders what it was sent.
